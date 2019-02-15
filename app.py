@@ -1,5 +1,5 @@
 import dash
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
@@ -11,20 +11,32 @@ client = pymongo.MongoClient('drunk:27017')
 # Data Manipulation / Model
 #############################
 
+# Populate dropdown with database on MongoDB/
+
 
 def get_database_name():
-
     dbl = client.list_database_names()
     return dbl
 
+# Generic function to access directly to runs collection of selected database
+
+
+def init_connection_to_runs(selected_database):
+    db = client[selected_database]
+    return db['runs']
+
+# Get_experience() return a list of experiences of selected data_base
+
 
 def get_experience(selected_database):
-    db = client[selected_database]
-    collection = db["runs"]
+    collection = init_connection_to_runs(selected_database)
     list = []
     for x in collection.find({}, {'experiment.name': 1}).distinct('experiment.name'):
         list.append(x)
     return list
+
+# get_nested(d, keys) create a list of key : value
+
 
 def get_nested(d, keys):
     if len(keys) == 1:
@@ -86,6 +98,11 @@ app.layout = html.Div([
         ]),
     ]),
 
+    #Button to update table
+        html.Div([
+            html.Button(id='submit-button', n_clicks=0, children='Submit'),
+        ]),
+
     html.Div([
 
             # Match Table
@@ -110,17 +127,20 @@ def update_list_experience(selected_database):
     experience_options = ([{'label': exp, 'value': exp} for exp in exps])
     return experience_options
 
-
+'''
+Update datatable. Program wait State arg before fire callback
+ and populate the table.
+'''
 @app.callback(Output('table', 'data'),
-              [Input('database-selector', 'value')]
-              [Input('experience-selector', 'value')])
-def update_table(selected_database, selected_experience):
-    db = client[selected_database]
-    collection = db[selected_experience]
-    cursor = collection.find({'experiment.name': str(selected_experience)})
+              [Input('submit-button', 'n_clicks')],
+              [State('database-selector', 'value'),
+              State('experience-selector', 'value')])
+def update_table(n_clicks, selected_database, selected_experience):
+    print(n_clicks)
+    collection = init_connection_to_runs(selected_database)
+    cursor = collection.find({'experiment.name': selected_experience})
     rows = generate_table_rows(cursor, columns)
     return rows
-
 
 
 # start Flask server
