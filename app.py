@@ -22,6 +22,7 @@ def get_database_name():
 
 
 def init_connection_to_runs(selected_database):
+    print(selected_database)
     db = client[selected_database]
     return db['runs']
 
@@ -49,7 +50,7 @@ def generate_table_rows(cursor, columns):
         row = {}
         for col in columns:
             row['.'.join(col)] = get_nested(exp, col)
-            rows.append(row)
+        rows.append(row)
     return rows
 
 
@@ -147,8 +148,3 @@ def update_table(n_clicks, selected_database, selected_experience):
 
 if __name__ == '__main__':
     app.run_server(debug=True)
-
-
-
-
-
