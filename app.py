@@ -22,7 +22,6 @@ def get_database_name():
 
 
 def init_connection_to_runs(selected_database):
-    print(selected_database)
     db = client[selected_database]
     return db['runs']
 
@@ -54,13 +53,13 @@ def generate_table_rows(cursor, columns):
     return rows
 
 
-columns = [('_id',), ('status',), ('config', 'dataset', 'name')]
+columns = [('_id',), ('status',)]#, ('config', 'dataset', 'name')]
 
 ########################################################################################################################
 # Dashboard Layout / View
 ########################################################################################################################
 
-def onLoad_database_options():
+def on_load_database_options():
     database_options = (
         [{'label': database, 'value': database}
          for database in get_database_name()]
@@ -87,7 +86,7 @@ app.layout = html.Div([
         html.Div([
             html.Div('Select DataBase'),
             html.Div(dcc.Dropdown(id='database-selector',
-                                  options=onLoad_database_options()))
+                                  options=on_load_database_options()))
         ]),
 
 
@@ -122,10 +121,11 @@ app.layout = html.Div([
 
 
 @app.callback(Output('experience-selector', 'options'),
-              [Input('database-selector', 'value')])
+              [State('database-selector', 'value')])
 def update_list_experience(selected_database):
     exps = get_experience(selected_database)
     experience_options = ([{'label': exp, 'value': exp} for exp in exps])
+    print(experience_options)
     return experience_options
 
 '''
@@ -139,7 +139,7 @@ Update datatable. Program wait State arg before fire callback
 def update_table(n_clicks, selected_database, selected_experience):
     print(n_clicks)
     collection = init_connection_to_runs(selected_database)
-    cursor = collection.find({'experiment.name': selected_experience})
+    cursor = collection.find({'experiment.name': {'$in': selected_experience}}) 
     rows = generate_table_rows(cursor, columns)
     return rows
 
@@ -147,4 +147,9 @@ def update_table(n_clicks, selected_database, selected_experience):
 # start Flask server
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host='cal')
+
+
+
+
+
