@@ -8,7 +8,7 @@ def get_nested(d, keys):
     return get_nested(d[keys[0]], keys[1:])
 
 
-def generate_table_rows(cursor, columns):
+def generate_experiment_table_rows(cursor, columns):
     rows = []
     for exp in cursor:
         row = {}
