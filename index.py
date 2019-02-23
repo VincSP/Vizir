@@ -16,58 +16,78 @@ app.layout = html.Div([
 
     #Select database
 
+
     html.Div([
-        html.Div([
-            html.Div('Select DataBase'),
-            html.Div(dcc.Dropdown(id='database-selector',
-                                  options=on_load_database_options()))
-        ]),
-
-        html.Div(id='intermediate-value', style={'display': 'none'}),
-
-    #Select experiences
-        html.Div([
-            html.Div('Select experiences'),
-            html.Div(dcc.Dropdown(id='experience-selector', multi=True))
-        ]),
+        html.Div('Select DataBase'),
+        html.Div(dcc.Dropdown(id='database-selector',
+                                options=on_load_database_options()))
     ]),
 
+    html.Div(id='intermediate-value', style={'display': 'none'}),
+
+    #Select experiences
+    html.Div([
+        html.Div('Select experiences'),
+        html.Div(dcc.Dropdown(id='experience-selector', multi=True))
+    ]),
+
+
     #Button to update table
+    html.Div([
+        html.Button(id='submit-button', n_clicks=0, children='Submit'),
+    ]),
+
+
+
         html.Div([
-            html.Button(id='submit-button', n_clicks=0, children='Submit'),
+            dcc.Input(
+                id='editing-columns-name',
+                placeholder='Enter a column name...',),
+        html.Button('Add Column', id='editing-columns-button',)
         ]),
 
-    html.Div([
-
-            html.Div([
-                dcc.Input(
-                    id='editing-columns-name',
-                    placeholder='Enter a column name...',),
-            html.Button('Add Column', id='editing-columns-button',)
-            ]),
-
-            # Match Table
-            html.Div(
-                dash_table.DataTable(id='table',
-                                     columns=[{"name": '.'.join(col), "id": '.'.join(col)} for col in columns],
-                                     row_selectable="single",
-                                     selected_rows=[],
-                                     style_table={
-                                         'maxHeight':'400',
-                                         'overflowY' :'scroll'
-                                     },)
-            ),
-            html.Div(id='inter-value', style={'display': 'none'}),
-            html.Button('Submit', id='editing-datatable',),
-            html.Div(
-                dash_table.DataTable(id='sec_table',
-                                     columns=[{"name": '.'.join(col), "id": '.'.join(col)} for col in columns],
-
-                                     )
-            )
-
-
-    ])
+        # Match Table
+        html.Div(
+            dash_table.DataTable(id='table',
+                                 columns=[{"name": '.'.join(col), "id": '.'.join(col)} for col in columns],
+                                 row_selectable="multi",
+                                 selected_rows=[],
+                                 style_table={
+                                        'maxHeight':'300',
+                                        'overflowY' :'scroll'
+                                 },
+                                 style_cell_conditional=[
+                                                            {
+                                                                'if':{'row_index' : 'odd'},
+                                                                'backgroundColor' : 'rgb(248, 248, 248)'
+                                                            }
+                                                        ] + [
+                                     {
+                                         'if': {'id': col},
+                                         'textAlign': 'left'
+                                     } for col in ['name']
+                                 ],
+                                 )
+        ),
+        html.Div(id='inter-value', style={'display': 'none'}, children=[]),
+        html.Button('Submit', id='editing-datatable',),
+        html.Div(
+            dash_table.DataTable(id='sec_table',
+                                 columns=[{"name": '.'.join(col), "id": '.'.join(col)} for col in columns],
+                                 row_deletable=True,
+                                 style_cell_conditional=[
+                                                            {
+                                                                'if':{'row_index' : 'odd'},
+                                                                'backgroundColor' : 'rgb(248,248,248)'
+                                                            }
+                                                        ] + [
+                                     {
+                                         'if':{'id' : col},
+                                         'textAlign':'left'
+                                     } for col in ['name']
+                                 ]
+                                 )
+        )
 ])
 
 
@@ -137,12 +157,11 @@ def update_sec_datatable_inter(rows,selected_rows_id):
               [Input('editing-datatable','n_clicks')],
               [
                   State('inter-value', 'children'),
-                  State('sec_table', 'data')
+
               ])
-def update_sec_datatable(click, value, old):
-    row= json.loads(value)
-    old += row
-    return old
+def update_sec_datatable(click, value):
+    rows = json.loads(value)
+    return rows
 
 if __name__ == '__main__':
     app.run_server(debug=True)
