@@ -1,0 +1,6 @@
+# Temp and binary files
+*~
+__pycache__/
+
+# IDE  files
+.idea/
