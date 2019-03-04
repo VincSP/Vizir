@@ -5,8 +5,7 @@ import dash_html_components as html
 import dash_table
 from dash.dependencies import Input, Output, State
 
-from app import app, columns
-from back import get_experiment_names, on_load_database_options, get_table_content
+from app import app, default_columns, data_manager
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -22,7 +21,7 @@ app.layout = html.Div([
     html.Div([
         html.Div('Select DataBase'),
         html.Div(dcc.Dropdown(id='database-selector',
-                                options=on_load_database_options()))
+                                options=data_manager.on_load_database_options()))
     ]),
 
     #Select experiments
@@ -47,7 +46,7 @@ app.layout = html.Div([
     # Match Table
     html.Div(
         dash_table.DataTable(id='experiment-table',
-                             columns=[{"name": col, "id": col} for col in columns],
+                             columns=[{"name": col, "id": col} for col in default_columns],
                              row_selectable="multi",
                              selected_rows=[],
                              filtering=True,
@@ -71,7 +70,7 @@ app.layout = html.Div([
     html.Button('Submit', id='editing-datatable'),
     html.Div(
         dash_table.DataTable(id='tmp_table',
-                             columns=[{"name": col, "id": col} for col in columns],
+                             columns=[{"name": col, "id": col} for col in default_columns],
                              row_deletable=True,
                              style_cell_conditional=[
                                                         {
@@ -92,7 +91,7 @@ app.layout = html.Div([
 @app.callback(Output('experiment-selector', 'options'),
               [Input('database-selector', 'value')])
 def update_list_experiment(db_name):
-    exp_names = get_experiment_names(db_name)
+    exp_names = data_manager.get_experiment_names(db_name)
     exps_selector_options = ([{'label': name, 'value': name} for name in exp_names])
     return exps_selector_options
 
@@ -112,7 +111,7 @@ def update_experiment_table(n_clicks, cols, db_name, experiment_names, data):
         return []
 
     columns = [col['id'] for col in cols]
-    rows = get_table_content(db_name, experiment_names, columns)
+    rows = data_manager.get_table_content(db_name, experiment_names, columns)
     return rows
 
 
