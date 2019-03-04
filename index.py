@@ -40,9 +40,8 @@ app.layout = html.Div([
 
     html.Div([
         dcc.Input(
-            id='editing-columns-name',
+            id='add-column',
             placeholder='Enter a column name...',),
-    html.Button('Add Column', id='editing-columns-button',)
     ]),
 
     # Match Table
@@ -118,14 +117,14 @@ def update_experiment_table(n_clicks, cols, db_name, experiment_names, data):
 
 
 @app.callback(Output('experiment-table', 'columns'),
-              [Input('editing-columns-button','n_clicks')],
-              [State('editing-columns-name', 'value'),
+              [Input('add-column','n_submit')],
+              [State('add-column', 'value'),
                 State('experiment-table', 'columns')])
-def update_columns(v_clicks, value, cols):
-    if v_clicks is None:
+def update_columns(n_submit, value, cols):
+    if n_submit is None:
         return cols
 
-    if v_clicks > 0:
+    if n_submit > 0:
         cols.append({
             'id': value, 'name': value,
             'editable_name': True, 'deletable': True
