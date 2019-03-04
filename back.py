@@ -38,16 +38,16 @@ def generate_experiment_table_rows(cursor, columns):
 
 class MongoManager():
     def __init__(self, server='localhost', port='27017'):
-        self.client = pymongo.MongoClient('{}:{}'.format(server, port))
+        self._client = pymongo.MongoClient('{}:{}'.format(server, port))
 
     def _get_database_names(self,):
         '''Populate dropdown with database on MongoDB/'''
-        dbl = self.client.list_database_names()
+        dbl = self._client.list_database_names()
         return dbl
 
     def _init_connection_to_runs(self,db_name):
         '''Generic function to access directly to runs collection of selected database'''
-        db = self.client[db_name]
+        db = self._client[db_name]
         return db['runs']
 
     def on_load_database_options(self):
