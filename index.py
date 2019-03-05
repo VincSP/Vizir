@@ -73,6 +73,7 @@ app.layout = html.Div([
         html.H1('Views'),
         dcc.Tabs(
             id="tabs",
+            # value='tab-config',
             value='tab-datatable',
             children=[
                 dcc.Tab(label='Datatable', value='tab-datatable'),
@@ -105,7 +106,7 @@ def update_experiment_table(n_clicks, cols, db_name, experiment_names, data):
         return []
 
     columns = [col['id'] for col in cols]
-    rows = data_manager.get_table_content(db_name, experiment_names, columns)
+    rows = data_manager.get_table_content_from_exp_names(db_name, experiment_names, columns)
     return rows
 
 
@@ -116,6 +117,7 @@ def update_experiment_table(n_clicks, cols, db_name, experiment_names, data):
 def update_columns(n_submit, value, cols):
     if n_submit is None:
         return cols
+
 
     if n_submit > 0:
         cols.append({
@@ -141,33 +143,25 @@ def update_columns(n_submit, value, cols):
                State('experiment-table', 'selected_rows'),
                State('experiment-table', 'data')])
 def render_content(tab, update_clicks, db_name, selected_rows, table_data):
-    print('Callbacked')
-    if update_clicks:
-        selected_ids = [table_data[i]['_id'] for i in selected_rows]
-        data = data_manager.get_tab_data(tab, db_name, selected_ids, default_columns)
-    else:
-        data = []
-
     if tab == 'tab-datatable':
         return datatable.layout
     elif tab == 'tab-config':
-        return html.Div([
-            html.H3('Configs'),
-            html.Pre(data[0]),
-            html.Pre(html.Code(data[1]))])
+        return config_viewer.layout
+    else:
+        return html.Div('Not Found')
+
 
 @app.callback(Output('tab-data', 'data'),
-              [Input('tabs', 'value'),
-               Input('update-selected-runs', 'n_clicks')],
+              [Input('tab-content', 'children')],
               [State('database-selector', 'value'),
                State('experiment-table', 'selected_rows'),
                State('experiment-table', 'data')])
-def populate_hidden(tab, update_clicks, db_name, selected_rows, table_data):
+def populate_hidden(update_clicks, db_name, selected_rows, table_data):
+
     selected_ids = [table_data[i]['_id'] for i in selected_rows]
     return {
         'db': db_name,
         'selected_ids': selected_ids,
-
     }
 
 if __name__ == '__main__':

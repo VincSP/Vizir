@@ -70,7 +70,7 @@ class MongoManager():
         exp_names = collection.find({}, {'experiment.name': 1}).distinct('experiment.name')
         return exp_names
 
-    def get_table_content(self, db_name, exp_names, columns):
+    def get_table_content_from_exp_names(self, db_name, exp_names, columns):
         collection = self._init_connection_to_runs(db_name)
 
         filter = {'experiment.name': {'$in': exp_names}}
@@ -80,20 +80,23 @@ class MongoManager():
 
         return generate_experiment_table_rows(cursor, columns)
 
-    def get_tab_data(self, tab, db_name, selected_ids, columns):
+    def get_table_content_from_ids(self, db_name, selected_ids, columns):
+        collection = self._init_connection_to_runs(db_name)
+
+        filter = {'_id': {'$in': selected_ids}, }
+        projection = dict((col, True) for col in columns)
+
+        cursor = collection.find(filter=filter, projection=projection)
+
+        return generate_experiment_table_rows(cursor, columns)
+
+    def get_configs_from_ids(self, db_name, selected_ids):
         collection = self._init_connection_to_runs(db_name)
         filter = {'_id': {'$in': selected_ids}, }
-        if tab == "tab-datatable":
-            projection = dict((col, True) for col in columns)
+        projection = dict(config=True)
+        cursor = collection.find(filter=filter, projection=projection)
+        res = []
+        for elt in cursor:
+            res.append(pprint.pformat(elt['config'], indent=4))
 
-            cursor = collection.find(filter=filter, projection=projection)
-            return generate_experiment_table_rows(cursor, columns)
-
-        if tab == "tab-config":
-            projection = dict(config=True)
-            cursor = collection.find(filter=filter, projection=projection)
-            res = []
-            for elt in cursor:
-                res.append(pprint.pformat(elt['config'], indent=4))
-
-            return res
+        return res
