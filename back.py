@@ -1,4 +1,5 @@
 import logging
+import pprint
 
 import pymongo
 
@@ -78,3 +79,21 @@ class MongoManager():
         cursor = collection.find(filter=filter, projection=projection)
 
         return generate_experiment_table_rows(cursor, columns)
+
+    def get_tab_data(self, tab, db_name, selected_ids, columns):
+        collection = self._init_connection_to_runs(db_name)
+        filter = {'_id': {'$in': selected_ids}, }
+        if tab == "tab-datatable":
+            projection = dict((col, True) for col in columns)
+
+            cursor = collection.find(filter=filter, projection=projection)
+            return generate_experiment_table_rows(cursor, columns)
+
+        if tab == "tab-config":
+            projection = dict(config=True)
+            cursor = collection.find(filter=filter, projection=projection)
+            res = []
+            for elt in cursor:
+                res.append(pprint.pformat(elt['config'], indent=4))
+
+            return res

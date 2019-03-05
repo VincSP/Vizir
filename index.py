@@ -6,6 +6,7 @@ import dash_table
 from dash.dependencies import Input, Output, State
 
 from app import app, default_columns, data_manager
+from apps import config_viewer, datatable
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -67,24 +68,17 @@ app.layout = html.Div([
                              ],
                              )
     ),
-    html.Button('Submit', id='editing-datatable'),
-    html.Div(
-        dash_table.DataTable(id='tmp_table',
-                             columns=[{"name": col, "id": col} for col in default_columns],
-                             row_deletable=True,
-                             style_cell_conditional=[
-                                                        {
-                                                            'if': {'row_index' : 'odd'},
-                                                            'backgroundColor' : 'rgb(248,248,248)'
-                                                        }
-                                                    ] + [
-                                 {
-                                     'if':{'id' : col},
-                                     'textAlign':'left'
-                                 } for col in ['name']
-                             ]
-                             )
-    )
+    html.Button('Submit', id='update-selected-runs'),
+    html.Div([
+        html.H1('Views'),
+        dcc.Tabs(
+            id="tabs",
+            value='tab-datatable',
+            children=[
+                dcc.Tab(label='Datatable', value='tab-datatable'),
+                dcc.Tab(label='Configs', value='tab-config')]),
+        html.Div(id='tab-content')
+    ])
 ])
 
 
@@ -131,13 +125,50 @@ def update_columns(n_submit, value, cols):
     return cols
 
 
-@app.callback(Output('tmp_table', 'data'),
-              [Input('editing-datatable','n_clicks')],
-               [State('experiment-table', 'data'),
-                State('experiment-table', 'selected_rows')])
-def update_sec_datatable_inter(click, rows, selected_rows_id):
-    return [rows[i] for i in selected_rows_id]
+# @app.callback(Output('tmp_table', 'data'),
+#                [Input('update-selected-runs', 'n_clicks')],
+#                 [State('experiment-table', 'data'),
+#                  State('experiment-table', 'selected_rows')])
+# def update_sec_datatable_inter(click, rows, selected_rows_id):
+#      return [rows[i] for i in selected_rows_id]
 
+
+
+@app.callback(Output('tab-content', 'children'),
+              [Input('tabs', 'value'),
+               Input('update-selected-runs', 'n_clicks')],
+              [State('database-selector', 'value'),
+               State('experiment-table', 'selected_rows'),
+               State('experiment-table', 'data')])
+def render_content(tab, update_clicks, db_name, selected_rows, table_data):
+    print('Callbacked')
+    if update_clicks:
+        selected_ids = [table_data[i]['_id'] for i in selected_rows]
+        data = data_manager.get_tab_data(tab, db_name, selected_ids, default_columns)
+    else:
+        data = []
+
+    if tab == 'tab-datatable':
+        return datatable.layout
+    elif tab == 'tab-config':
+        return html.Div([
+            html.H3('Configs'),
+            html.Pre(data[0]),
+            html.Pre(html.Code(data[1]))])
+
+@app.callback(Output('tab-data', 'data'),
+              [Input('tabs', 'value'),
+               Input('update-selected-runs', 'n_clicks')],
+              [State('database-selector', 'value'),
+               State('experiment-table', 'selected_rows'),
+               State('experiment-table', 'data')])
+def populate_hidden(tab, update_clicks, db_name, selected_rows, table_data):
+    selected_ids = [table_data[i]['_id'] for i in selected_rows]
+    return {
+        'db': db_name,
+        'selected_ids': selected_ids,
+
+    }
 
 if __name__ == '__main__':
     app.run_server(debug=True)
