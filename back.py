@@ -1,6 +1,8 @@
 import logging
-
+from pandas import DataFrame
 import pymongo
+from dash.exceptions import PreventUpdate
+
 
 logger = logging.getLogger('dashvision.{}'.format(__name__))
 
@@ -78,3 +80,34 @@ class MongoManager():
         cursor = collection.find(filter=filter, projection=projection)
 
         return generate_experiment_table_rows(cursor, columns)
+
+    def filter_rows_by_query(self, rows, query):
+        '''
+        Returns rows that are filtered by the query.
+        Uses the pandas.DataFrame.query method
+        '''
+
+        if query.strip() == '':
+            return rows
+
+        df = DataFrame(rows)
+
+        # temporarily replacing '.' in columns to '__'
+        # for pandas syntax reasons
+        normalize_col_names = lambda x: x.replace('.', '__')
+        df = df.rename(columns=normalize_col_names)
+
+        # filter rows with query
+        try:
+            df_filtered = df.query(normalize_col_names(query), locals={})
+        except:
+            logger.warning(f'Error in query "{query}"')
+            raise PreventUpdate
+        
+        # recovering origin column names
+        denormalize_col_names = lambda x: x.replace('__', '.')
+        df_filtered= df_filtered.rename(columns=denormalize_col_names)
+
+        filtered_rows = df_filtered.to_dict('rows')
+        return filtered_rows
+
