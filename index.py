@@ -148,4 +148,4 @@ def update_sec_datatable_inter(click, rows, selected_rows_id):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='cal')
+    app.run_server(debug=True)
