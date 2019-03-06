@@ -30,13 +30,6 @@ app.layout = html.Div([
         html.Div(dcc.Dropdown(id='experiment-selector', multi=True))
     ]),
 
-
-    #Button to update table
-    html.Div([
-        html.Button(id='generate-experiment-table-button', n_clicks=0, children='Submit'),
-    ]),
-
-
     html.Div([
         dcc.Input(
             id='add-column',
@@ -97,12 +90,11 @@ def update_list_experiment(db_name):
 
 
 @app.callback(Output('experiment-table', 'data'),
-              [Input('generate-experiment-table-button', 'n_clicks'),
-                Input('experiment-table', 'columns')],
+              [Input('experiment-table', 'columns'),
+                Input('experiment-selector', 'value')],
               [State('database-selector', 'value'),
-                State('experiment-selector', 'value'),
                 State('experiment-table', 'data')])
-def update_experiment_table(n_clicks, cols, db_name, experiment_names, data):
+def update_experiment_table(cols, experiment_names, db_name, data):
     '''
     Update datatable. Program wait State arg before fire callback
      and populate the table.
