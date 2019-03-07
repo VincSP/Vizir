@@ -100,8 +100,8 @@ class MongoManager():
         # filter rows with query
         try:
             df_filtered = df.query(normalize_col_names(query), local_dict={})
-        except:
-            logger.warning(f'Error in query "{query}"')
+        except Exception as e:
+            logger.warning(f'Error in query "{query}": {e}')
             raise PreventUpdate
         
         # recovering origin column names
