@@ -49,6 +49,8 @@ app.layout = html.Div([
                              columns=[{"name": col, "id": col} for col in default_columns],
                              row_selectable="multi",
                              selected_rows=[],
+                             sorting=True,
+                             sorting_type="multi",                               
                              filtering=True,
                              style_table={
                                     'maxHeight':'300',
