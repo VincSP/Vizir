@@ -95,7 +95,7 @@ class MongoManager():
         # temporarily replacing '.' in columns to '__'
         # for pandas syntax reasons
         normalize_col_names = lambda x: x.replace('.', '___')
-        before_columns = df.columns
+
         df_renamed = df.rename(columns=normalize_col_names)
 
         # filter rows with query
