@@ -35,14 +35,17 @@ app.layout = html.Div([
             id='add-column',
             placeholder='Enter a column name...',),
     ]),
-
+    html.Div([
+        dcc.Input(
+            id='add-query',
+            placeholder='Enter a query...',),
+    ]),
     # Match Table
     html.Div(
         dash_table.DataTable(id='experiment-table',
                              columns=[{"name": col, "id": col} for col in default_columns],
                              row_selectable="multi",
                              selected_rows=[],
-                             filtering=True,
                              style_table={
                                     'maxHeight':'300',
                                     'overflowY' :'scroll'
@@ -90,11 +93,12 @@ def update_list_experiment(db_name):
 
 
 @app.callback(Output('experiment-table', 'data'),
-              [Input('experiment-table', 'columns'),
-                Input('experiment-selector', 'value')],
-              [State('database-selector', 'value'),
-                State('experiment-table', 'data')])
-def update_experiment_table(cols, experiment_names, db_name, data):
+              [Input('experiment-selector', 'value'),
+                Input('experiment-table', 'columns'),
+                Input('add-query', 'n_submit')],
+              [State('add-query', 'value'),
+                State('database-selector', 'value')])
+def update_experiment_table(experiment_names, cols, query_nsub, query, db_name):
     '''
     Update datatable. Program wait State arg before fire callback
      and populate the table.
@@ -104,6 +108,10 @@ def update_experiment_table(cols, experiment_names, db_name, data):
 
     columns = [col['id'] for col in cols]
     rows = data_manager.get_table_content(db_name, experiment_names, columns)
+
+    if query_nsub is not None:
+        rows = data_manager.filter_rows_by_query(rows, query)
+
     return rows
 
 
