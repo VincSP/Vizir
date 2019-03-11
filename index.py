@@ -93,13 +93,12 @@ def update_list_experiment(db_name):
 
 
 @app.callback(Output('experiment-table', 'data'),
-              [Input('generate-experiment-table-button', 'n_clicks'),
+              [Input('experiment-selector', 'value'),
                 Input('experiment-table', 'columns'),
                 Input('add-query', 'n_submit')],
               [State('add-query', 'value'),
-                State('database-selector', 'value'),
-                State('experiment-selector', 'value')])
-def update_experiment_table(n_clicks, cols, query_nsub, query, db_name, experiment_names):
+                State('database-selector', 'value')])
+def update_experiment_table(experiment_names, cols, query_nsub, query, db_name):
     '''
     Update datatable. Program wait State arg before fire callback
      and populate the table.
