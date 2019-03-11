@@ -30,13 +30,6 @@ app.layout = html.Div([
         html.Div(dcc.Dropdown(id='experiment-selector', multi=True))
     ]),
 
-
-    #Button to update table
-    html.Div([
-        html.Button(id='generate-experiment-table-button', n_clicks=0, children='Submit'),
-    ]),
-
-
     html.Div([
         dcc.Input(
             id='add-column',
