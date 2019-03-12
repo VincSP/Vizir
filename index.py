@@ -1,11 +1,13 @@
-import json
+import logging
+
+import datetime
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
 from dash.dependencies import Input, Output, State
+from app import app, default_columns, data_manager, cache
 
-from app import app, columns, generate_experiment_table_rows
-from back import get_experiment_names, init_connection_to_runs, on_load_database_options
+logging.basicConfig(level=logging.DEBUG)
 
 
 app.layout = html.Div([
@@ -19,7 +21,7 @@ app.layout = html.Div([
     html.Div([
         html.Div('Select DataBase'),
         html.Div(dcc.Dropdown(id='database-selector',
-                                options=on_load_database_options()))
+                                options=data_manager.on_load_database_options()))
     ]),
 
     #Select experiments
@@ -28,24 +30,16 @@ app.layout = html.Div([
         html.Div(dcc.Dropdown(id='experiment-selector', multi=True))
     ]),
 
-
-    #Button to update table
-    html.Div([
-        html.Button(id='generate-experiment-table-button', n_clicks=0, children='Submit'),
-    ]),
-
-
     html.Div([
         dcc.Input(
-            id='editing-columns-name',
+            id='add-column',
             placeholder='Enter a column name...',),
-    html.Button('Add Column', id='editing-columns-button',)
     ]),
 
     # Match Table
     html.Div(
         dash_table.DataTable(id='experiment-table',
-                             columns=[{"name": '.'.join(col), "id": '.'.join(col)} for col in columns],
+                             columns=[{"name": col, "id": col} for col in default_columns],
                              row_selectable="multi",
                              selected_rows=[],
                              filtering=True,
@@ -69,7 +63,7 @@ app.layout = html.Div([
     html.Button('Submit', id='editing-datatable'),
     html.Div(
         dash_table.DataTable(id='tmp_table',
-                             columns=[{"name": '.'.join(col), "id": '.'.join(col)} for col in columns],
+                             columns=[{"name": col, "id": col} for col in default_columns],
                              row_deletable=True,
                              style_cell_conditional=[
                                                         {
@@ -89,47 +83,42 @@ app.layout = html.Div([
 
 @app.callback(Output('experiment-selector', 'options'),
               [Input('database-selector', 'value')])
+@cache.memoize(timeout=60)
 def update_list_experiment(db_name):
-    exp_names = get_experiment_names(db_name)
+    exp_names = data_manager.get_experiment_names(db_name)
     exps_selector_options = ([{'label': name, 'value': name} for name in exp_names])
     return exps_selector_options
 
 
 @app.callback(Output('experiment-table', 'data'),
-              [Input('generate-experiment-table-button', 'n_clicks'),
-                Input('editing-columns-button','n_clicks')],
+              [Input('experiment-table', 'columns'),
+                Input('experiment-selector', 'value')],
               [State('database-selector', 'value'),
-                State('experiment-selector', 'value'),
-                State('editing-columns-name', 'value'),
-                State('experiment-table', 'data')
-               ])
-def update_experiment_table(n_clicks, v_clicks, db_name, experiment_names, new_col, data):
+                State('experiment-table', 'data')])
+@cache.memoize(timeout=60)
+def update_experiment_table(cols, experiment_names, db_name, data):
     '''
     Update datatable. Program wait State arg before fire callback
      and populate the table.
     '''
-    global columns
     if db_name is None:
         return []
-    collection = init_connection_to_runs(db_name)
-    cursor = collection.find({'experiment.name': {'$in': experiment_names}})
-    if new_col is not None:
-        columns += [new_col.split('.')]
-    rows = generate_experiment_table_rows(cursor, columns)
 
+    columns = [col['id'] for col in cols]
+    rows = data_manager.get_table_content(db_name, experiment_names, columns)
     return rows
 
 
 @app.callback(Output('experiment-table', 'columns'),
-              [Input('editing-columns-button','n_clicks')],
-              [State('editing-columns-name', 'value'),
-                State('experiment-table', 'columns'),
-               State('experiment-table', 'data')])
-def update_columns(v_clicks, value, cols, data):
-    if v_clicks is None:
+              [Input('add-column','n_submit')],
+              [State('add-column', 'value'),
+                State('experiment-table', 'columns')])
+@cache.memoize(timeout=60)
+def update_columns(n_submit, value, cols):
+    if n_submit is None:
         return cols
 
-    if v_clicks > 0:
+    if n_submit > 0:
         cols.append({
             'id': value, 'name': value,
             'editable_name': True, 'deletable': True
@@ -140,11 +129,13 @@ def update_columns(v_clicks, value, cols, data):
 @app.callback(Output('tmp_table', 'data'),
               [Input('editing-datatable','n_clicks')],
                [State('experiment-table', 'data'),
-                State('experiment-table', 'selected_rows')]
-               )
+                State('experiment-table', 'selected_rows')])
+@cache.memoize(timeout=60)
 def update_sec_datatable_inter(click, rows, selected_rows_id):
     return [rows[i] for i in selected_rows_id]
 
 
+
+
 if __name__ == '__main__':
-    app.run_server(debug=True, host='cal')
+    app.run_server(debug=True)
