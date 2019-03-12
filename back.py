@@ -1,6 +1,7 @@
 import logging
-
 import pymongo
+
+
 
 logger = logging.getLogger('dashvision.{}'.format(__name__))
 
@@ -17,6 +18,7 @@ def get_nested(d, keys):
         d = d[k]
 
     return d
+
 
 def generate_experiment_table_rows(cursor, columns):
     warn_missing = set()
@@ -40,21 +42,25 @@ class MongoManager():
     def __init__(self, server='localhost', port='27017'):
         self._client = pymongo.MongoClient('{}:{}'.format(server, port))
 
+
     def _get_database_names(self,):
         '''Populate dropdown with database on MongoDB/'''
         dbl = self._client.list_database_names()
         return dbl
+
 
     def _init_connection_to_runs(self,db_name):
         '''Generic function to access directly to runs collection of selected database'''
         db = self._client[db_name]
         return db['runs']
 
+
     def on_load_database_options(self):
         database_options = []
         for db_name in self._get_database_names():
             database_options += [{'label': db_name, 'value': db_name}]
         return database_options
+
 
     def get_experiment_names(self, db_name):
         ''''
@@ -68,6 +74,7 @@ class MongoManager():
         collection = self._init_connection_to_runs(db_name)
         exp_names = collection.find({}, {'experiment.name': 1}).distinct('experiment.name')
         return exp_names
+
 
     def get_table_content(self, db_name, exp_names, columns):
         collection = self._init_connection_to_runs(db_name)

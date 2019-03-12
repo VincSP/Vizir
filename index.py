@@ -1,11 +1,11 @@
 import logging
 
+import datetime
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
 from dash.dependencies import Input, Output, State
-
-from app import app, default_columns, data_manager
+from app import app, default_columns, data_manager, cache
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -83,6 +83,7 @@ app.layout = html.Div([
 
 @app.callback(Output('experiment-selector', 'options'),
               [Input('database-selector', 'value')])
+@cache.memoize(timeout=60)
 def update_list_experiment(db_name):
     exp_names = data_manager.get_experiment_names(db_name)
     exps_selector_options = ([{'label': name, 'value': name} for name in exp_names])
@@ -94,6 +95,7 @@ def update_list_experiment(db_name):
                 Input('experiment-selector', 'value')],
               [State('database-selector', 'value'),
                 State('experiment-table', 'data')])
+@cache.memoize(timeout=60)
 def update_experiment_table(cols, experiment_names, db_name, data):
     '''
     Update datatable. Program wait State arg before fire callback
@@ -111,6 +113,7 @@ def update_experiment_table(cols, experiment_names, db_name, data):
               [Input('add-column','n_submit')],
               [State('add-column', 'value'),
                 State('experiment-table', 'columns')])
+@cache.memoize(timeout=60)
 def update_columns(n_submit, value, cols):
     if n_submit is None:
         return cols
@@ -127,8 +130,11 @@ def update_columns(n_submit, value, cols):
               [Input('editing-datatable','n_clicks')],
                [State('experiment-table', 'data'),
                 State('experiment-table', 'selected_rows')])
+@cache.memoize(timeout=60)
 def update_sec_datatable_inter(click, rows, selected_rows_id):
     return [rows[i] for i in selected_rows_id]
+
+
 
 
 if __name__ == '__main__':
