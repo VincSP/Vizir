@@ -1,6 +1,8 @@
 import logging
-
+from pandas import DataFrame
 import pymongo
+from dash.exceptions import PreventUpdate
+
 
 logger = logging.getLogger('dashvision.{}'.format(__name__))
 
@@ -78,3 +80,41 @@ class MongoManager():
         cursor = collection.find(filter=filter, projection=projection)
 
         return generate_experiment_table_rows(cursor, columns)
+
+    def filter_rows_by_query(self, rows, query):
+        '''
+        Returns rows that are filtered by the query.
+        Uses the pandas.DataFrame.query method
+        '''
+
+        if query.strip() == '':
+            return rows
+
+        df = DataFrame(rows)
+
+        # temporarily replacing '.' in columns to '__'
+        # for pandas syntax reasons
+        normalize_col_names = lambda x: x.replace('.', '___')
+
+        df_renamed = df.rename(columns=normalize_col_names)
+
+        # filter rows with query
+        try:
+            df_filtered = df_renamed.query(normalize_col_names(query), local_dict={})
+        except Exception as e:
+            logger.warning(f'Error in query "{query}": {e}')
+            raise PreventUpdate
+        
+        # recovering origin column names
+        denormalize_col_names = lambda x: x.replace('___', '.')
+        df_filtered = df_filtered.rename(columns=denormalize_col_names)
+
+        # check column integrity
+        if (df_filtered.columns != df.columns).any():
+            col_diff = [f'{c} -> {cf}' for c, cf in zip(df.columns, df_filtered.columns) if c != cf]
+            logger.warning(f'Columns {", ".join(col_diff)} differ before and after query.')
+            raise PreventUpdate
+
+        filtered_rows = df_filtered.to_dict('rows')
+        return filtered_rows
+
