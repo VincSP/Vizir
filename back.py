@@ -1,4 +1,6 @@
 import logging
+import pprint
+
 from pandas import DataFrame
 import pymongo
 from dash.exceptions import PreventUpdate
@@ -71,7 +73,7 @@ class MongoManager():
         exp_names = collection.find({}, {'experiment.name': 1}).distinct('experiment.name')
         return exp_names
 
-    def get_table_content(self, db_name, exp_names, columns):
+    def get_table_content_from_exp_names(self, db_name, exp_names, columns):
         collection = self._init_connection_to_runs(db_name)
 
         filter = {'experiment.name': {'$in': exp_names}}
@@ -80,6 +82,27 @@ class MongoManager():
         cursor = collection.find(filter=filter, projection=projection)
 
         return generate_experiment_table_rows(cursor, columns)
+
+    def get_table_content_from_ids(self, db_name, selected_ids, columns):
+        collection = self._init_connection_to_runs(db_name)
+
+        filter = {'_id': {'$in': selected_ids}, }
+        projection = dict((col, True) for col in columns)
+
+        cursor = collection.find(filter=filter, projection=projection)
+
+        return generate_experiment_table_rows(cursor, columns)
+
+    def get_configs_from_ids(self, db_name, selected_ids):
+        collection = self._init_connection_to_runs(db_name)
+        filter = {'_id': {'$in': selected_ids}, }
+        projection = dict(config=True)
+        cursor = collection.find(filter=filter, projection=projection)
+        res = []
+        for elt in cursor:
+            res.append(pprint.pformat(elt['config'], indent=4))
+
+        return res
 
     def filter_rows_by_query(self, rows, query):
         '''
