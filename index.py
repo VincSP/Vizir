@@ -3,6 +3,7 @@ import logging
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
+import time
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
@@ -157,6 +158,15 @@ def populate_hidden(tab, update_clicks, db_name, selected_rows, table_data):
         'db': db_name,
         'selected_ids': selected_ids,
     }
+
+
+@app.callback(Output('experiment-table', 'selected_rows'),
+              [Input('update-selected-runs', 'n_clicks')],
+              [State('experiment-table', 'selected_rows')])
+def reset_selected_rows(value, selected_rows ):
+    time.sleep(0.1)
+    selected_rows[:] = []
+    return selected_rows
 
 
 if __name__ == '__main__':
