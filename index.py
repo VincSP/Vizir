@@ -161,10 +161,12 @@ def populate_hidden(tab, update_clicks, db_name, selected_rows, table_data):
 
 
 @app.callback(Output('experiment-table', 'selected_rows'),
-              [Input('update-selected-runs', 'n_clicks')],
+              [Input('add-query', 'n_submit'),
+               Input('add-column', 'n_submit'),
+               Input('experiment-selector', 'value'),
+               Input('database-selector', 'value')],
               [State('experiment-table', 'selected_rows')])
-def reset_selected_rows(value, selected_rows ):
-    time.sleep(0.1)
+def reset_selected_rows(v_submit,n_submit,value_experiment, value_database, selected_rows ):
     selected_rows[:] = []
     return selected_rows
 
