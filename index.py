@@ -23,7 +23,8 @@ app.layout = html.Div([
     # # when the browser/tab closes.
     # dcc.Store(id='tab_storage_0', storage_type='session'),
     # dcc.Store(id='tab_storage_1', storage_type='session'),
-    dcc.Store(id='database-storage', storage_type='session'),
+    dcc.Store(id='database-dd-storage', storage_type='session'),
+    dcc.Store(id='experiments-dd-storage', storage_type='session'),
     # dcc.Store(id='session', storage_type='session'),
 
     # Page header
@@ -93,19 +94,19 @@ app.layout = html.Div([
     html.Div(id='tab-content', className="row")],
     style={"margin": "2% 3%"})
 
+
 @app.callback([Output('database-selector', 'value'),
                Output('experiment-selector', 'options')],
-              [Input('database-storage', 'modified_timestamp')],
+              [Input('database-dd-storage', 'modified_timestamp')],
               [State('database-selector', 'options'),
-               State('database-storage', 'data')])
-def select_db(ts, db_options, stored_data):
+               State('database-dd-storage', 'data')])
+def select_db(ts, db_options, stored_db_name):
 
-    if ts is None or stored_data is None:
+    if ts is None or stored_db_name is None:
         # stored data doesn't exists or isn't loaded yet.
         raise PreventUpdate
 
-    stored_db_name = stored_data.get('selected-db')
-    all_db_names = [itm['value'] for itm in db_options]
+    all_db_names = {itm['value'] for itm in db_options}
     if stored_db_name is None or stored_db_name not in all_db_names:
         raise PreventUpdate
 
@@ -114,16 +115,46 @@ def select_db(ts, db_options, stored_data):
     return stored_db_name, exps_selector_options
 
 
-@app.callback(Output('database-storage', 'data'),
+@app.callback(Output('database-dd-storage', 'data'),
               [Input('database-selector', 'value')],
-              [State('database-storage', 'modified_timestamp')])
-def select_database(selected_value, ts):
+              [State('database-dd-storage', 'modified_timestamp'),
+               State('database-dd-storage', 'data')])
+def select_database(selected_value, ts, stored_db_name):
     """
     Stores the database selected by the user
     """
     if ts is None:
         raise PreventUpdate
-    return {'selected-db': selected_value}
+
+    return selected_value
+
+
+@app.callback(Output('experiment-selector', 'value'),
+              [Input('experiment-selector', 'options')],
+              [State('experiments-dd-storage', 'data')])
+def init_experiments(exp_options, stored_experiments):
+    if stored_experiments is None:
+        raise PreventUpdate
+
+    all_db_names = {itm['value'] for itm in exp_options}
+    if all(map(lambda item: item in all_db_names, stored_experiments)):
+        return stored_experiments
+    else:
+        # One selected experiment isn't in the options
+        raise PreventUpdate
+
+
+@app.callback(Output('experiments-dd-storage', 'data'),
+              [Input('experiment-selector', 'value')],
+              [State('experiments-dd-storage', 'modified_timestamp'),
+               State('experiments-dd-storage', 'data')])
+def select_experiement(selected_value, ts, stored_data):
+    """
+    Stores the database selected by the user
+    """
+    stored_data = stored_data or {}
+    stored_data['selected-expe'] = selected_value
+    return stored_data
 
 
 
