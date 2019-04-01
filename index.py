@@ -94,15 +94,15 @@ def update_list_experiment(db_name):
 @app.callback(Output('experiment-table', 'data'),
               [Input('experiment-selector', 'value'),
                 Input('experiment-table', 'columns'),
-                Input('add-query', 'n_submit')],
-              [State('add-query', 'value'),
-                State('database-selector', 'value')])
-def update_experiment_table(experiment_names, cols, query_nsub, query, db_name):
+                Input('add-query', 'n_submit'),
+               Input('database-selector', 'value')],
+              [State('add-query', 'value')])
+def update_experiment_table(experiment_names, cols, query_nsub, db_name, query):
     '''
     Update datatable. Program wait State arg before fire callback
      and populate the table.
     '''
-    if db_name is None:
+    if db_name is None or not experiment_names:
         return []
 
     columns = [col['id'] for col in cols]
@@ -162,13 +162,11 @@ def populate_hidden(tab, update_clicks, db_name, selected_rows, table_data):
 
 @app.callback(Output('experiment-table', 'selected_rows'),
               [Input('add-query', 'n_submit'),
-               Input('add-column', 'n_submit'),
                Input('experiment-selector', 'value'),
                Input('database-selector', 'value')],
               [State('experiment-table', 'selected_rows')])
-def reset_selected_rows(v_submit,n_submit,value_experiment, value_database, selected_rows ):
-    selected_rows[:] = []
-    return selected_rows
+def reset_selected_rows(v_submit, value_experiment, value_database, selected_rows ):
+    return []
 
 
 if __name__ == '__main__':
