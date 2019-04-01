@@ -1,5 +1,6 @@
 import logging
 
+import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
@@ -25,6 +26,7 @@ app.layout = html.Div([
     # dcc.Store(id='tab_storage_1', storage_type='session'),
     dcc.Store(id='database-dd-storage', storage_type='session'),
     dcc.Store(id='experiments-dd-storage', storage_type='session'),
+    dcc.Store(id='table-selection-storage', storage_type='session'),
     # dcc.Store(id='session', storage_type='session'),
 
     # Page header
@@ -138,11 +140,12 @@ def init_experiments(exp_options, stored_experiments):
     if all(map(lambda item: item in db_option_names, stored_experiments)):
         return stored_experiments
     else:
-        # One selected experiment isn't in the options
+        # At least one selected experiment isn't in the options
         raise PreventUpdate
 
 @app.callback(Output('experiments-dd-storage', 'data'),
               [Input('experiment-selector', 'value')],
+               # Input('table-selection-storage', 'data')],
               [State('experiments-dd-storage', 'modified_timestamp')])
 def select_experiement(selected_value, ts):
     """
@@ -156,8 +159,8 @@ def select_experiement(selected_value, ts):
 
 @app.callback(Output('experiment-table', 'data'),
               [Input('experiment-selector', 'value'),
-                Input('experiment-table', 'columns'),
-                Input('add-query', 'n_submit'),
+               Input('experiment-table', 'columns'),
+               Input('add-query', 'n_submit'),
                Input('database-selector', 'value')],
               [State('add-query', 'value')])
 def update_experiment_table(experiment_names, cols, query_nsub, db_name, query):
@@ -223,13 +226,39 @@ def populate_hidden(tab, update_clicks, db_name, selected_rows, table_data):
     }
 
 
-@app.callback(Output('experiment-table', 'selected_rows'),
-              [Input('add-query', 'n_submit'),
+@app.callback(Output('table-selection-storage', 'data'),
+              [Input('experiment-table', 'selected_rows'),
+               Input('database-selector', 'value'),
                Input('experiment-selector', 'value'),
-               Input('database-selector', 'value')],
-              [State('experiment-table', 'selected_rows')])
-def reset_selected_rows(v_submit, value_experiment, value_database, selected_rows ):
-    return []
+               Input('add-query', 'n_submit')],
+              [State('experiment-table', 'data'),
+               State('table-selection-storage', 'data'),
+               State('add-query', 'value')])
+def reset_selected_rows(selected_rows, db_name, experiment_names, submit_query, table_data, stored_data, query_txt):
+    #todo: Reset rows only is query_txt has changed
+    ctx = dash.callback_context
+    is_query = any(itm['prop_id'] == 'add-query.n_submit' for itm in ctx.triggered)
+
+    stored_data = stored_data or {}
+
+    if is_query or db_name != stored_data.get('db_name') or experiment_names != stored_data.get('experiment_names'):
+        stored_data = {
+            'db_name': db_name,
+            'experiment_names': experiment_names,
+            'selected_rows': []
+        }
+    else:
+        stored_data['selected_rows'] = selected_rows
+    return stored_data
+
+
+@app.callback(Output('experiment-table', 'selected_rows'),
+              [Input('table-selection-storage', 'modified_timestamp')],
+              [State('table-selection-storage', 'data')])
+def reset_selected_rows(ts, data):
+    if ts is None or data is None:
+        raise PreventUpdate
+    return data['selected_rows']
 
 
 if __name__ == '__main__':
