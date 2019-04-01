@@ -117,11 +117,10 @@ def select_db(ts, db_options, stored_db_name):
 
 @app.callback(Output('database-dd-storage', 'data'),
               [Input('database-selector', 'value')],
-              [State('database-dd-storage', 'modified_timestamp'),
-               State('database-dd-storage', 'data')])
-def select_database(selected_value, ts, stored_db_name):
+              [State('database-dd-storage', 'modified_timestamp')])
+def select_database(selected_value, ts):
     """
-    Stores the database selected by the user
+    Stores the database selected by the user in the session storage.
     """
     if ts is None:
         raise PreventUpdate
@@ -146,15 +145,15 @@ def init_experiments(exp_options, stored_experiments):
 
 @app.callback(Output('experiments-dd-storage', 'data'),
               [Input('experiment-selector', 'value')],
-              [State('experiments-dd-storage', 'modified_timestamp'),
-               State('experiments-dd-storage', 'data')])
-def select_experiement(selected_value, ts, stored_data):
+              [State('experiments-dd-storage', 'modified_timestamp')])
+def select_experiement(selected_value, ts):
     """
-    Stores the database selected by the user
+    Stores the experiments selected by the user in the session storage.
     """
-    stored_data = stored_data or {}
-    stored_data['selected-expe'] = selected_value
-    return stored_data
+    if ts is None:
+        raise PreventUpdate
+
+    return selected_value
 
 
 
