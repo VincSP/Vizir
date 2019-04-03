@@ -14,6 +14,18 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('dashvision.index')
 
 app.layout = html.Div([
+    # dcc.Store(id='memory'),
+    # The local store will take the initial data
+    # only the first time the page is loaded
+    # and keep it until it is cleared.
+    # dcc.Store(id='local', storage_type='local'),
+    # # Same as the local store but will lose the data
+    # # when the browser/tab closes.
+    # dcc.Store(id='tab_storage_0', storage_type='session'),
+    # dcc.Store(id='tab_storage_1', storage_type='session'),
+    dcc.Store(id='database-dd-storage', storage_type='session'),
+    dcc.Store(id='experiments-dd-storage', storage_type='session'),
+    # dcc.Store(id='session', storage_type='session'),
 
     # Page header
     html.Div([
@@ -83,12 +95,67 @@ app.layout = html.Div([
     style={"margin": "2% 3%"})
 
 
-@app.callback(Output('experiment-selector', 'options'),
-              [Input('database-selector', 'value')])
-def update_list_experiment(db_name):
-    exp_names = data_manager.get_experiment_names(db_name)
+@app.callback([Output('database-selector', 'value'),
+               Output('experiment-selector', 'options')],
+              [Input('database-dd-storage', 'modified_timestamp')],
+              [State('database-selector', 'options'),
+               State('database-dd-storage', 'data')])
+def select_db(ts, db_options, stored_db_name):
+
+    if ts is None or stored_db_name is None:
+        # stored data doesn't exists or isn't loaded yet.
+        raise PreventUpdate
+
+    all_db_names = {itm['value'] for itm in db_options}
+    if stored_db_name is None or stored_db_name not in all_db_names:
+        raise PreventUpdate
+
+    exp_names = data_manager.get_experiment_names(stored_db_name)
     exps_selector_options = ([{'label': name, 'value': name} for name in exp_names])
-    return exps_selector_options
+    return stored_db_name, exps_selector_options
+
+
+@app.callback(Output('database-dd-storage', 'data'),
+              [Input('database-selector', 'value')],
+              [State('database-dd-storage', 'modified_timestamp')])
+def select_database(selected_value, ts):
+    """
+    Stores the database selected by the user in the session storage.
+    """
+    if ts is None:
+        raise PreventUpdate
+
+    return selected_value
+
+
+@app.callback(Output('experiment-selector', 'value'),
+              [Input('experiment-selector', 'options')],
+              [State('experiments-dd-storage', 'data')])
+def init_experiments(exp_options, stored_experiments):
+    if stored_experiments is None:
+        raise PreventUpdate
+
+    all_db_names = {itm['value'] for itm in exp_options}
+    if all(map(lambda item: item in all_db_names, stored_experiments)):
+        return stored_experiments
+    else:
+        # One selected experiment isn't in the options
+        raise PreventUpdate
+
+
+@app.callback(Output('experiments-dd-storage', 'data'),
+              [Input('experiment-selector', 'value')],
+              [State('experiments-dd-storage', 'modified_timestamp')])
+def select_experiement(selected_value, ts):
+    """
+    Stores the experiments selected by the user in the session storage.
+    """
+    if ts is None:
+        raise PreventUpdate
+
+    return selected_value
+
+
 
 
 @app.callback(Output('experiment-table', 'data'),
