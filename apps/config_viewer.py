@@ -43,4 +43,4 @@ for i in [0, 1]:
     def dropdown_callback(selected_run, data_args):
         if data_args is None or selected_run is None:
             return 'No run selected'
-        return data_manager.get_configs_from_ids(data_args['db'], [selected_run])
+        return data_manager._get_configs_from_ids(data_args['db'], [selected_run])
