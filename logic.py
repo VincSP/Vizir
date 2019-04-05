@@ -29,7 +29,7 @@ class AppLogic():
         return connexion
 
     def on_load_database_options(self, ):
-        database_name = self.data_manager._get_database_names
+        database_name = self.data_manager._on_load_database_options()
         database_options = []
         for db_name in database_name:
             database_options += [{'label': db_name, 'value': db_name}]
@@ -37,7 +37,7 @@ class AppLogic():
 
     def get_table_content_from_exp_names(self, db_name, exp_names, columns):
         cursor = self.data_manager._get_table_content_from_ids(db_name,exp_names,columns)
-        table_content = AppLogic.generate_experiment_table_rows(cursor,columns)
+        table_content = self.generate_experiment_table_rows(cursor, columns)
         return table_content
 
 

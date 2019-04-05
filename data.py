@@ -1,9 +1,5 @@
 import pymongo
-import pprint
 
-from pandas import DataFrame
-
-from dash.exceptions import PreventUpdate
 
 class MongoManager():
     def __init__(self, server='localhost', port='27017'):
@@ -44,7 +40,7 @@ class MongoManager():
 
         cursor = collection.find(filter=filter, projection=projection)
 
-        return generate_experiment_table_rows(cursor, columns)
+        return cursor
 
     def _get_table_content_from_ids(self, db_name, selected_ids, columns):
         collection = self._init_connection_to_runs(db_name)
