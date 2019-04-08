@@ -7,7 +7,7 @@ import time
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from app import app, default_columns, data_manager
+from app import app, default_columns, logic_manager
 from apps import config_viewer, datatable
 
 logging.basicConfig(level=logging.DEBUG)
@@ -36,7 +36,7 @@ app.layout = html.Div([
     html.Div([
         html.Div('Select DataBase'),
         html.Div(dcc.Dropdown(id='database-selector',
-                              options=data_manager.on_load_database_options()))
+                              options=logic_manager.database_options()))
     ]),
 
     # Select experiments
@@ -106,12 +106,11 @@ def select_db(ts, db_options, stored_db_name):
         # stored data doesn't exists or isn't loaded yet.
         raise PreventUpdate
 
-    all_db_names = {itm['value'] for itm in db_options}
-    if stored_db_name is None or stored_db_name not in all_db_names:
+    db_option_names = {itm['value'] for itm in db_options}
+    if stored_db_name is None or stored_db_name not in db_option_names:
         raise PreventUpdate
 
-    exp_names = data_manager.get_experiment_names(stored_db_name)
-    exps_selector_options = ([{'label': name, 'value': name} for name in exp_names])
+    exps_selector_options = logic_manager.experiment_options(stored_db_name)
     return stored_db_name, exps_selector_options
 
 
@@ -135,13 +134,12 @@ def init_experiments(exp_options, stored_experiments):
     if stored_experiments is None:
         raise PreventUpdate
 
-    all_db_names = {itm['value'] for itm in exp_options}
-    if all(map(lambda item: item in all_db_names, stored_experiments)):
+    db_option_names = {itm['value'] for itm in exp_options}
+    if all(map(lambda item: item in db_option_names, stored_experiments)):
         return stored_experiments
     else:
         # One selected experiment isn't in the options
         raise PreventUpdate
-
 
 @app.callback(Output('experiments-dd-storage', 'data'),
               [Input('experiment-selector', 'value')],
@@ -154,8 +152,6 @@ def select_experiement(selected_value, ts):
         raise PreventUpdate
 
     return selected_value
-
-
 
 
 @app.callback(Output('experiment-table', 'data'),
@@ -173,10 +169,10 @@ def update_experiment_table(experiment_names, cols, query_nsub, db_name, query):
         return []
 
     columns = [col['id'] for col in cols]
-    rows = data_manager.get_table_content_from_exp_names(db_name, experiment_names, columns)
+    rows = logic_manager.table_content_from_exp_names(db_name, experiment_names, columns)
 
     if query_nsub is not None:
-        rows = data_manager.filter_rows_by_query(rows, query)
+        rows = logic_manager.filter_rows_by_query(rows, query)
 
     return rows
 

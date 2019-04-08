@@ -2,7 +2,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
-from app import app, data_manager
+from app import app, logic_manager
 
 layout = html.Div([
     html.H3('Configs'),
@@ -28,7 +28,7 @@ for i in [0, 1]:
             return []
 
         selected_ids = data_args.get('selected_ids', [])
-        return ([{'label': 'Experience {}'.format(id), 'value': id} for id in selected_ids])
+        return [{'label': 'Experience {}'.format(id), 'value': id} for id in selected_ids]
 
     @app.callback(Output('run-selector-{}'.format(i), 'value'),
                   [Input('run-selector-{}'.format(i), 'options')])
@@ -43,4 +43,4 @@ for i in [0, 1]:
     def dropdown_callback(selected_run, data_args):
         if data_args is None or selected_run is None:
             return 'No run selected'
-        return data_manager.get_configs_from_ids(data_args['db'], [selected_run])
+        return logic_manager.configs_from_ids(data_args['db'], [selected_run])

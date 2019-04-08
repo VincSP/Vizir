@@ -3,7 +3,7 @@ import dash_table
 
 from dash.dependencies import Input, Output, State
 
-from app import app, default_columns, data_manager
+from app import app, default_columns, logic_manager
 
 layout = html.Div([
     html.H3('Datatable of selected runs'),
@@ -28,6 +28,7 @@ layout = html.Div([
     )
 ])
 
+
 @app.callback(Output('selected_datatable', 'data'), [Input('tab-data', 'data')])
 def populate_table(data_args):
-    return data_manager.get_table_content_from_ids(data_args['db'], data_args['selected_ids'], default_columns)
+    return logic_manager.table_content_from_ids(data_args['db'], data_args['selected_ids'], default_columns)
