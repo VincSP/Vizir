@@ -14,41 +14,41 @@ class AppLogic():
     def __init__(self, data_manager):
         self.data_manager = data_manager
 
-    def get_database_names(self,):
-        db_name = self.data_manager._get_database_names()
+    def database_names(self, ):
+        db_name = self.data_manager.get_database_names()
         return db_name
 
 
-    def get_experiment_names(self, db_name):
-        exp_name = self.data_manager._get_experiment_names(db_name)
+    def experiment_names(self, db_name):
+        exp_name = self.data_manager.get_experiment_names(db_name)
         return exp_name
 
 
-    def init_connections_to_runs(self, db_name):
-        connexion = self.data_manager._init_connection_to_runs(db_name)
+    def connections_to_runs(self, db_name):
+        connexion = self.data_manager.init_connection_to_runs(db_name)
         return connexion
 
-    def on_load_database_options(self, ):
-        database_name = self.data_manager._on_load_database_options()
+    def database_options(self, ):
+        database_name = self.data_manager.on_load_database_options()
         database_options = []
         for db_name in database_name:
             database_options += [{'label': db_name, 'value': db_name}]
         return database_options
 
-    def get_table_content_from_exp_names(self, db_name, exp_names, columns):
-        cursor = self.data_manager._get_table_content_from_exp_names(db_name,exp_names,columns)
+    def table_content_from_exp_names(self, db_name, exp_names, columns):
+        cursor = self.data_manager.get_table_content_from_exp_names(db_name, exp_names, columns)
         table_content = self.generate_experiment_table_rows(cursor, columns)
         return table_content
 
 
-    def get_table_content_from_ids(self, db_name, selected_ids, columns):
-        cursor = self.data_manager._get_table_content_from_ids(db_name, selected_ids, columns)
+    def table_content_from_ids(self, db_name, selected_ids, columns):
+        cursor = self.data_manager.get_table_content_from_ids(db_name, selected_ids, columns)
         table = self.generate_experiment_table_rows(cursor, columns)
         return table
 
 
-    def get_configs_from_ids(self, db_name, selected_ids):
-        cursor = self.data_manager._get_configs_from_ids(db_name, selected_ids)
+    def configs_from_ids(self, db_name, selected_ids):
+        cursor = self.data_manager.get_configs_from_ids(db_name, selected_ids)
         res = []
         for elt in cursor:
             res.append(pprint.pformat(elt['config'], indent=4))

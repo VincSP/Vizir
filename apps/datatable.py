@@ -31,4 +31,4 @@ layout = html.Div([
 
 @app.callback(Output('selected_datatable', 'data'), [Input('tab-data', 'data')])
 def populate_table(data_args):
-    return logic_manager.get_table_content_from_ids(data_args['db'], data_args['selected_ids'], default_columns)
+    return logic_manager.table_content_from_ids(data_args['db'], data_args['selected_ids'], default_columns)
