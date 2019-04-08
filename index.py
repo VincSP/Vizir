@@ -156,8 +156,6 @@ def select_experiement(selected_value, ts):
     return selected_value
 
 
-
-
 @app.callback(Output('experiment-table', 'data'),
               [Input('experiment-selector', 'value'),
                 Input('experiment-table', 'columns'),

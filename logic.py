@@ -43,7 +43,8 @@ class AppLogic():
 
     def get_table_content_from_ids(self, db_name, selected_ids, columns):
         cursor = self.data_manager._get_table_content_from_ids(db_name, selected_ids, columns)
-        return cursor
+        table = self.generate_experiment_table_rows(cursor, columns)
+        return table
 
 
     def get_configs_from_ids(self, db_name, selected_ids):
