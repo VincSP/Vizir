@@ -10,6 +10,8 @@ from app import app, default_columns, logic_manager
 layout = html.Div([
     html.H3('Graph'),
     html.Div(id='tab-data', style={'display': 'none'}),
-    html.Div()
+    html.Div(
+        dcc.Graph()
+    )
 
 ])
