@@ -15,19 +15,10 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('dashvision.index')
 
 app.layout = html.Div([
-    # dcc.Store(id='memory'),
-    # The local store will take the initial data
-    # only the first time the page is loaded
-    # and keep it until it is cleared.
-    # dcc.Store(id='local', storage_type='local'),
-    # # Same as the local store but will lose the data
-    # # when the browser/tab closes.
-    # dcc.Store(id='tab_storage_0', storage_type='session'),
-    # dcc.Store(id='tab_storage_1', storage_type='session'),
+    # Storages
     dcc.Store(id='database-dd-storage', storage_type='session'),
     dcc.Store(id='experiments-dd-storage', storage_type='session'),
     dcc.Store(id='table-selection-storage', storage_type='session'),
-    # dcc.Store(id='session', storage_type='session'),
 
     # Page header
     html.Div([
@@ -83,6 +74,7 @@ app.layout = html.Div([
                              )
     ),
     html.Button('Submit', id='update-selected-runs'),
+
     html.Div(
         [
             html.H1('Views'),
@@ -102,7 +94,7 @@ app.layout = html.Div([
               [Input('database-dd-storage', 'modified_timestamp')],
               [State('database-selector', 'options'),
                State('database-dd-storage', 'data')])
-def select_db(ts, db_options, stored_db_name):
+def select_or_load_db(ts, db_options, stored_db_name):
 
     if ts is None or stored_db_name is None:
         # stored data doesn't exists or isn't loaded yet.
@@ -255,7 +247,7 @@ def reset_selected_rows(selected_rows, db_name, experiment_names, submit_query, 
 @app.callback(Output('experiment-table', 'selected_rows'),
               [Input('table-selection-storage', 'modified_timestamp')],
               [State('table-selection-storage', 'data')])
-def reset_selected_rows(ts, data):
+def load_selected_rows(ts, data):
     if ts is None or data is None:
         raise PreventUpdate
     return data['selected_rows']
