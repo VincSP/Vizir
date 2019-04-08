@@ -106,12 +106,11 @@ def select_db(ts, db_options, stored_db_name):
         # stored data doesn't exists or isn't loaded yet.
         raise PreventUpdate
 
-    all_db_names = {itm['value'] for itm in db_options}
-    if stored_db_name is None or stored_db_name not in all_db_names:
+    db_option_names = {itm['value'] for itm in db_options}
+    if stored_db_name is None or stored_db_name not in db_option_names:
         raise PreventUpdate
 
-    exp_names = logic_manager.experiment_names(stored_db_name)
-    exps_selector_options = ([{'label': name, 'value': name} for name in exp_names])
+    exps_selector_options = logic_manager.experiment_options(stored_db_name)
     return stored_db_name, exps_selector_options
 
 
@@ -135,13 +134,12 @@ def init_experiments(exp_options, stored_experiments):
     if stored_experiments is None:
         raise PreventUpdate
 
-    all_db_names = {itm['value'] for itm in exp_options}
-    if all(map(lambda item: item in all_db_names, stored_experiments)):
+    db_option_names = {itm['value'] for itm in exp_options}
+    if all(map(lambda item: item in db_option_names, stored_experiments)):
         return stored_experiments
     else:
         # One selected experiment isn't in the options
         raise PreventUpdate
-
 
 @app.callback(Output('experiments-dd-storage', 'data'),
               [Input('experiment-selector', 'value')],

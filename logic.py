@@ -14,35 +14,27 @@ class AppLogic():
     def __init__(self, data_manager):
         self.data_manager = data_manager
 
-    def database_names(self, ):
-        db_name = self.data_manager.get_database_names()
-        return db_name
+    def experiment_options(self, db_name):
+        exp_names = self.data_manager.get_experiment_names(db_name)
+        exps_selector_options = ([{'label': name, 'value': name} for name in exp_names])
+        return exps_selector_options
 
-
-    def experiment_names(self, db_name):
-        exp_name = self.data_manager.get_experiment_names(db_name)
-        return exp_name
-
-
-    def connections_to_runs(self, db_name):
-        connexion = self.data_manager.init_connection_to_runs(db_name)
-        return connexion
 
     def database_options(self, ):
-        database_name = self.data_manager.on_load_database_options()
+        database_name = self.data_manager.get_database_names()
         database_options = []
         for db_name in database_name:
             database_options += [{'label': db_name, 'value': db_name}]
         return database_options
 
     def table_content_from_exp_names(self, db_name, exp_names, columns):
-        cursor = self.data_manager.get_table_content_from_exp_names(db_name, exp_names, columns)
+        cursor = self.data_manager.get_rows_from_exp_names(db_name, exp_names, columns)
         table_content = self.generate_experiment_table_rows(cursor, columns)
         return table_content
 
 
     def table_content_from_ids(self, db_name, selected_ids, columns):
-        cursor = self.data_manager.get_table_content_from_ids(db_name, selected_ids, columns)
+        cursor = self.data_manager.get_rows_from_ids(db_name, selected_ids, columns)
         table = self.generate_experiment_table_rows(cursor, columns)
         return table
 

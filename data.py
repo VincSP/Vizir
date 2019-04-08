@@ -6,7 +6,7 @@ class MongoManager():
         self._client = pymongo.MongoClient(server, int(port))
 
     def get_database_names(self, ):
-        '''Populate dropdown with database on MongoDB/'''
+        '''Get all databases on MongoDB'''
         dbl = self._client.list_database_names()
         return dbl
 
@@ -14,10 +14,6 @@ class MongoManager():
         '''Generic function to access directly to runs collection of selected database'''
         db = self._client[db_name]
         return db['runs']
-
-    def on_load_database_options(self):
-         db_name = self.get_database_names()
-         return db_name
 
     def get_experiment_names(self, db_name):
         ''''
@@ -32,7 +28,7 @@ class MongoManager():
         exp_names = collection.find({}, {'experiment.name': 1}).distinct('experiment.name')
         return exp_names
 
-    def get_table_content_from_exp_names(self, db_name, exp_names, columns):
+    def get_rows_from_exp_names(self, db_name, exp_names, columns):
         collection = self.init_connection_to_runs(db_name)
 
         filter = {'experiment.name': {'$in': exp_names}}
@@ -42,7 +38,7 @@ class MongoManager():
 
         return cursor
 
-    def get_table_content_from_ids(self, db_name, selected_ids, columns):
+    def get_rows_from_ids(self, db_name, selected_ids, columns):
         collection = self.init_connection_to_runs(db_name)
 
         filter = {'_id': {'$in': selected_ids}, }
