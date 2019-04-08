@@ -36,7 +36,7 @@ class AppLogic():
         return database_options
 
     def get_table_content_from_exp_names(self, db_name, exp_names, columns):
-        cursor = self.data_manager._get_table_content_from_ids(db_name,exp_names,columns)
+        cursor = self.data_manager._get_table_content_from_exp_names(db_name,exp_names,columns)
         table_content = self.generate_experiment_table_rows(cursor, columns)
         return table_content
 
@@ -76,7 +76,7 @@ class AppLogic():
             row = {}
             for col in columns:
                 try:
-                    row[col] = AppLogic.get_nested(exp, col.split('.'))
+                    row[col] = self.get_nested(exp, col.split('.'))
                 except KeyError:
                     if col not in warn_missing:
                         warn_missing.add(col)
