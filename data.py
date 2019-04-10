@@ -15,6 +15,7 @@ class MongoManager():
         db = self._client[db_name]
         return db['runs']
 
+
     def get_experiment_names(self, db_name):
         ''''
         Returns a list of experiments of selected data_base
@@ -56,3 +57,7 @@ class MongoManager():
 
         return cursor
 
+    def get_metric(self, db_name, exp_name,selected_ids):
+        collection = self.init_connection_to_runs(db_name)
+        filter = {'experiment.name': {'$in': exp_name }}
+        filter['status'] = {'$in': completed}

@@ -11,7 +11,7 @@ layout = html.Div([
     html.H3('Graph'),
     html.Div(id='tab-data', style={'display': 'none'}),
     html.Div(
-        dcc.Graph()
+        dcc.Graph(id='graph')
     )
 
 ])
