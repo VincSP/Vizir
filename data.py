@@ -15,6 +15,9 @@ class MongoManager():
         db = self._client[db_name]
         return db['runs']
 
+    def init_connection_to_metrics(self, db_name):
+        db = self._client[db_name]
+        return db['metrics']
 
     def get_experiment_names(self, db_name):
         ''''
@@ -57,7 +60,15 @@ class MongoManager():
 
         return cursor
 
-    def get_metric(self, db_name, exp_name,selected_ids):
+    def get_metrics_infos(self, db_name, selected_ids):
         collection = self.init_connection_to_runs(db_name)
-        filter = {'experiment.name': {'$in': exp_name }}
-        filter['status'] = {'$in': completed}
+        filter = {"_id": {"$in": selected_ids}}
+        projection = {"info.metrics": 1}
+        cursor = collection.find(filter=filter, projection=projection)
+        return cursor
+
+    def get_metric_data(self, metric_name, db_name, selected_ids):
+        collection = self.init_connection_to_metrics(db_name)
+        filter = {"name": {"$eq": metric_name}, "run_id": {"$in": selected_ids}}
+        cursor = collection.find(filter=filter)
+        return cursor

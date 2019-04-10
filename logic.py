@@ -115,4 +115,20 @@ class AppLogic():
         filtered_rows = df_filtered.to_dict('rows')
         return filtered_rows
 
+    def metric_names_from_ids(self, db_name, selected_ids):
+        cursor = self.data_manager.get_metrics_infos(db_name, selected_ids)
+        names = set()
+        for elt in cursor:
+            if 'metrics' in elt['info']:
+                names.update([m['name'] for m in elt['info']['metrics']])
+        return list(names)
 
+    def metric_data_from_ids(self, metric_name, db_name, selected_ids):
+        cursor = self.data_manager.get_metric_data(metric_name, db_name, selected_ids)
+        data = []
+        for elt in cursor:
+            data.append(elt)
+            # print('id', elt['_id'], elt['name'], elt['run_id'])
+            # print(elt.keys())
+            # print('data', elt)
+        return data
