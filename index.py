@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from app import app, default_columns, logic_manager
-from apps import config_viewer, datatable, graphic_viewer
+from apps import config_viewer, datatable, plot_viewer
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('dashvision.index')
@@ -203,7 +203,7 @@ def render_content(tab, update_clicks):
     elif tab == 'tab-config':
         return config_viewer.layout
     elif tab == 'tab-graph':
-        return graphic_viewer.layout
+        return plot_viewer.layout
     else:
         return html.Div('Not Found')
 

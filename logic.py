@@ -125,10 +125,4 @@ class AppLogic():
 
     def metric_data_from_ids(self, metric_name, db_name, selected_ids):
         cursor = self.data_manager.get_metric_data(metric_name, db_name, selected_ids)
-        data = []
-        for elt in cursor:
-            data.append(elt)
-            # print('id', elt['_id'], elt['name'], elt['run_id'])
-            # print(elt.keys())
-            # print('data', elt)
-        return data
+        return cursor
