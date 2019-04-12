@@ -22,7 +22,7 @@ app.layout = html.Div([
 
     # Page header
     html.Div([
-        html.H1('Dash Vision')
+        html.H1('Vizir')
     ]),
 
     # Select database
