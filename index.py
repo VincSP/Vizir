@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from app import app, default_columns, logic_manager
-from apps import config_viewer, datatable
+from apps import config_viewer, datatable, plot_viewer
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('dashvision.index')
@@ -83,7 +83,8 @@ app.layout = html.Div([
                 value='tab-datatable',
                 children=[
                     dcc.Tab(label='Datatable', value='tab-datatable'),
-                    dcc.Tab(label='Configs', value='tab-config')])],
+                    dcc.Tab(label='Configs', value='tab-config'),
+                    dcc.Tab(label='Graph', value='tab-graph')])],
         className="row"),
     html.Div(id='tab-content', className="row")],
     style={"margin": "2% 3%"})
@@ -196,6 +197,8 @@ def render_content(tab, update_clicks):
         return datatable.layout
     elif tab == 'tab-config':
         return config_viewer.layout
+    elif tab == 'tab-graph':
+        return plot_viewer.layout
     else:
         return html.Div('Not Found')
 
