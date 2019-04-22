@@ -13,7 +13,12 @@ layout = html.Div([
     html.Div(dcc.Dropdown(id='metric-dropdown')),
     html.Div(
         dcc.Graph(id='metric-plot')
-    )
+    ),
+    dcc.Interval(
+            id='graph-interval',
+            interval=5000,
+            n_intervals=0
+        )
 
 ])
 
@@ -30,9 +35,10 @@ def populate_metric_dropdown(data_args):
 
 
 @app.callback(Output('metric-plot', 'figure'),
-              [Input('metric-dropdown', 'value')],
+              [Input('metric-dropdown', 'value'),
+               Input('graph-interval', 'n_intervals')],
               [State('tab-data', 'data')])
-def plot_metric(metric_name, data_args):
+def plot_metric(metric_name, n, data_args):
     if data_args is None:
         return []
     selected_ids = data_args.get('selected_ids', [])
