@@ -23,15 +23,23 @@ layout = html.Div([
 ])
 
 
-@app.callback(Output('metric-dropdown', 'options'),
-              [Input('tab-data', 'data')])
-def populate_metric_dropdown(data_args):
+@app.callback([Output('metric-dropdown', 'options'),
+               Output('metric-dropdown', 'value')],
+              [Input('tab-data', 'data')],
+              [State('plot-storage', 'data')])
+def populate_metric_dropdown(data_args, plot_storage_data):
     if data_args is None:
         return []
     selected_ids = data_args.get('selected_ids', [])
     db_name = data_args['db']
     metric_names = logic_manager.metric_names_from_ids(db_name, selected_ids)
-    return [{'label': name, 'value': name} for name in metric_names]
+    return [{'label': name, 'value': name} for name in metric_names], plot_storage_data
+
+
+@app.callback(Output('plot-storage', 'data'),
+              [Input('metric-dropdown', 'value')],)
+def store_selected_metric(selected_metric):
+    return selected_metric
 
 
 @app.callback(Output('metric-plot', 'figure'),

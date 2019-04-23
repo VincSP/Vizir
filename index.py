@@ -19,6 +19,7 @@ app.layout = html.Div([
     dcc.Store(id='database-dd-storage', storage_type='session'),
     dcc.Store(id='experiments-dd-storage', storage_type='session'),
     dcc.Store(id='table-selection-storage', storage_type='session'),
+    dcc.Store(id='plot-storage', storage_type='session'),
 
     # Page header
     html.Div([
