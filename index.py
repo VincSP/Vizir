@@ -10,6 +10,7 @@ from dash.exceptions import PreventUpdate
 
 from app import app, default_columns, logic_manager
 from apps import config_viewer, datatable, plot_viewer
+import helpers
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('dashvision.index')
@@ -97,14 +98,13 @@ app.layout = html.Div([
               [State('database-selector', 'options'),
                State('database-dd-storage', 'data')])
 def select_or_load_db(ts, db_options, stored_db_name):
-
-    if ts is None or stored_db_name is None:
-        # stored data doesn't exists or isn't loaded yet.
+    if ts is None:
+        # Stored data isn't loaded yet.
         raise PreventUpdate
 
-    db_option_names = {itm['value'] for itm in db_options}
-    if stored_db_name is None or stored_db_name not in db_option_names:
-        raise PreventUpdate
+    if stored_db_name is None or not helpers.selection_in_options(stored_db_name, db_options):
+        # Stored database is not an available option
+        return None, []
 
     exps_selector_options = logic_manager.experiment_options(stored_db_name)
     return stored_db_name, exps_selector_options
@@ -119,23 +119,22 @@ def select_database(selected_value, ts):
     """
     if ts is None:
         raise PreventUpdate
-
     return selected_value
 
 
 @app.callback(Output('experiment-selector', 'value'),
               [Input('experiment-selector', 'options')],
-              [State('experiments-dd-storage', 'data')])
-def init_experiments(exp_options, stored_experiments):
-    if stored_experiments is None:
+              [State('experiments-dd-storage', 'data'),
+               State('experiments-dd-storage', 'modified_timestamp')])
+def init_experiments(exp_options, stored_experiments, ts):
+    if ts is None:
         raise PreventUpdate
 
-    db_option_names = {itm['value'] for itm in exp_options}
-    if all(map(lambda item: item in db_option_names, stored_experiments)):
+    if helpers.selection_in_options(stored_experiments, exp_options):
         return stored_experiments
-    else:
-        # At least one selected experiment isn't in the options
-        raise PreventUpdate
+
+    return None
+
 
 @app.callback(Output('experiments-dd-storage', 'data'),
               [Input('experiment-selector', 'value')],
@@ -224,20 +223,28 @@ def populate_hidden(tab, update_clicks, db_name, selected_rows, table_data):
 
 @app.callback(Output('table-selection-storage', 'data'),
               [Input('experiment-table', 'selected_rows'),
-               Input('database-selector', 'value'),
                Input('experiment-selector', 'value'),
                Input('add-query', 'n_submit')],
               [State('experiment-table', 'data'),
+               State('database-selector', 'value'),
                State('table-selection-storage', 'data'),
                State('add-query', 'value')])
-def reset_selected_rows(selected_rows, db_name, experiment_names, submit_query, table_data, stored_data, query_txt):
-    #todo: Reset rows only is query_txt has changed
+def reset_selected_rows(selected_rows, experiment_names, submit_query, table_data, db_name, stored_data, query_txt):
+    #todo: Reset rows only if query_txt has changed
     ctx = dash.callback_context
     is_query = any(itm['prop_id'] == 'add-query.n_submit' for itm in ctx.triggered)
 
     stored_data = stored_data or {}
-
+    logger.debug('Triggered by {}'.format(ctx.triggered))
     if is_query or db_name != stored_data.get('db_name') or experiment_names != stored_data.get('experiment_names'):
+        if is_query:
+            logger.debug('Reset because query')
+        elif db_name != stored_data.get('db_name'):
+            logger.debug('Reset because current db is {} and stored is {}'
+                         .format(db_name, stored_data.get('db_name')))
+        elif experiment_names != stored_data.get('experiment_names'):
+            logger.debug('Reset because current db is {} and stored is {}'
+                         .format(experiment_names, stored_data.get('experiment_names')))
         stored_data = {
             'db_name': db_name,
             'experiment_names': experiment_names,
@@ -249,9 +256,10 @@ def reset_selected_rows(selected_rows, db_name, experiment_names, submit_query, 
 
 
 @app.callback(Output('experiment-table', 'selected_rows'),
-              [Input('table-selection-storage', 'modified_timestamp')],
+              [Input('table-selection-storage', 'modified_timestamp'),
+              Input('experiment-selector', 'value')],
               [State('table-selection-storage', 'data')])
-def load_selected_rows(ts, data):
+def load_selected_rows(ts, exp_selection, data):
     if ts is None or data is None:
         raise PreventUpdate
     return data['selected_rows']
