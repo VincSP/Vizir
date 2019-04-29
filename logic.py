@@ -9,6 +9,14 @@ from data import MongoManager
 
 logger = logging.getLogger('dashvision.{}'.format(__name__))
 
+
+def get_image_tag_from_name(name):
+    return name.rsplit('_', 1)[0]
+
+def get_image_step_from_name(name):
+    return int(name.rsplit('_', 1)[1])
+
+
 class AppLogic():
 
     def __init__(self, data_manager):
@@ -115,4 +123,29 @@ class AppLogic():
         filtered_rows = df_filtered.to_dict('rows')
         return filtered_rows
 
+    def image_tags_from_ids(self, db_name, selected_ids):
+        """
+            Assuming that the image name is {tag}_{step}
+        """
+        images = self.data_manager.get_images_from_ids(db_name, selected_ids)
+        names = [n for exp in images.values() for n in exp.values()]
+        return set(map(get_image_tag_from_name, names))
+
+    def images_from_tag(self, db_name, selected_ids, tag):
+
+        # retrieving all image names
+        images = self.data_manager.get_images_from_ids(db_name, selected_ids)
+
+        # filtering images names corresponding to given tag
+        filtered_images = {}
+        for exp_id, exp_ims in images.items():
+            filtered_images[exp_id] = {}
+            for im_id, im_name in exp_ims.items():
+                if get_image_tag_from_name(im_name) == tag:
+                    filtered_images[exp_id][im_id] = im_name
+
+        return filtered_images
+
+    def file(self, db_name, file_id):
+        return self.data_manager.get_file(db_name, file_id)
 
