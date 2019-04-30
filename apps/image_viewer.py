@@ -93,7 +93,7 @@ def populate_image_dropdown(data_args):
     selected_ids = data_args.get('selected_ids', [])
     db_name = data_args['db']
     image_tags = logic_manager.image_tags_from_ids(db_name, selected_ids)
-    return [{'label': name, 'value': name} for name in image_tags]
+    return [{'label': name, 'value': name} for name in sorted(image_tags)]
 
 
 @app.callback(Output('image-storage', 'data'),

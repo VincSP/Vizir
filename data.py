@@ -26,6 +26,10 @@ class MongoManager():
         db = self._client[db_name]
         return gridfs.GridFS(db)
 
+    def init_connection_to_metrics(self, db_name):
+        db = self._client[db_name]
+        return db['metrics']
+
     def get_experiment_names(self, db_name):
         ''''
         Returns a list of experiments of selected data_base
@@ -73,7 +77,13 @@ class MongoManager():
             }
         """
         def is_image(info):
-            return info['contentType'].startswith('image')
+            print('info', info)
+            if 'contentType' in info:
+                return info['contentType'].startswith('image')
+            elif 'content-type' in info['metadata']:
+                return info['metadata']['content-type'].startswith('image')
+            else:
+                return False
 
         # retrieving all artifacts
         cursor = self.get_artifacts_info_from_ids(db_name, selected_ids)
@@ -82,17 +92,18 @@ class MongoManager():
         for exp in cursor:
 
             # new images data structure
-            images_exp = {}
+            artifacts_exp = {}
             for artifact in exp['artifacts']:
                 id = str(artifact['file_id'])
-                images_exp[id] = artifact['name']
+                artifacts_exp[id] = artifact['name']
 
             # remove non-image artifacts
-            ids = [ObjectId(id) for id in images_exp.keys()]
+            ids = [ObjectId(id) for id in artifacts_exp.keys()]
             cursor = self.get_artifacts(db_name, ids)
-            for (id, name), info in zip(images_exp.items(), cursor):
-                if not is_image(info):
-                    del images_exp[id]
+            images_exp = {}
+            for (id, name), info in zip(artifacts_exp.items(), cursor):
+                if is_image(info):
+                    images_exp[id] = name
 
             images[exp['_id']] = images_exp
 
@@ -115,5 +126,18 @@ class MongoManager():
     def get_artifacts(self, db_name, file_ids):
         collection = self.init_connection_to_fsfiles(db_name)
         filter = {'_id': {'$in': file_ids}}
+        cursor = collection.find(filter=filter)
+        return cursor
+
+    def get_metrics_infos(self, db_name, selected_ids):
+        collection = self.init_connection_to_runs(db_name)
+        filter = {"_id": {"$in": selected_ids}}
+        projection = {"info.metrics": 1}
+        cursor = collection.find(filter=filter, projection=projection)
+        return cursor
+
+    def get_metric_data(self, metric_name, db_name, selected_ids):
+        collection = self.init_connection_to_metrics(db_name)
+        filter = {"name": {"$eq": metric_name}, "run_id": {"$in": selected_ids}}
         cursor = collection.find(filter=filter)
         return cursor
