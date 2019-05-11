@@ -1,8 +1,5 @@
 # Dash-Vision
-Web interface for visualization using Dash framework 
 
-Aim : Compare different machine learning experiences and visualize it 
+Compare different machine learning experiences (currently in developpment).
 
-In developements.
-
-Used technologies : Python, MongoDB, Dash.
+![Alt text](presentation.gif)
