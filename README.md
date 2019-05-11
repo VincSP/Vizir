@@ -1,4 +1,4 @@
-# Dash-Vision
+# Vizir
 
 Compare different machine learning experiences (currently in developpment).
 
