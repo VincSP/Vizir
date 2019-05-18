@@ -72,3 +72,9 @@ class MongoManager():
         filter = {"name": {"$eq": metric_name}, "run_id": {"$in": selected_ids}}
         cursor = collection.find(filter=filter)
         return cursor
+
+    def get_metrics_data(self, metric_names, db_name, selected_ids):
+        collection = self.init_connection_to_metrics(db_name)
+        filter = {"name": {"$in": metric_names}, "run_id": {"$in": selected_ids}}
+        cursor = collection.find(filter=filter)
+        return cursor

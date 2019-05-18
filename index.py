@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from app import app, default_columns, logic_manager
-from apps import config_viewer, datatable, plot_viewer
+from apps import config_viewer, datatable, plot_viewer, pareto
 import helpers
 
 logging.basicConfig(level=logging.DEBUG)
@@ -22,6 +22,8 @@ app.layout = html.Div([
     dcc.Store(id='table-columns-storage', storage_type='session'),
     dcc.Store(id='table-selection-storage', storage_type='session'),
     dcc.Store(id='plot-storage', storage_type='session'),
+    dcc.Store(id='x-pareto-storage', storage_type='session'),
+    dcc.Store(id='y-pareto-storage', storage_type='session'),
 
     # Page header
     html.Div([
@@ -87,7 +89,9 @@ app.layout = html.Div([
                 children=[
                     dcc.Tab(label='Datatable', value='tab-datatable'),
                     dcc.Tab(label='Configs', value='tab-config'),
-                    dcc.Tab(label='Graph', value='tab-graph')])],
+                    dcc.Tab(label='Graph', value='tab-graph'),
+                    dcc.Tab(label='Pareto', value='tab-pareto'),
+                ])],
         className="row"),
     html.Div(id='tab-content', className="row")],
     style={"margin": "2% 3%"})
@@ -212,6 +216,8 @@ def render_content(tab, update_clicks):
         return config_viewer.layout
     elif tab == 'tab-graph':
         return plot_viewer.layout
+    elif tab == 'tab-pareto':
+        return pareto.layout
     else:
         return html.Div('Not Found')
 

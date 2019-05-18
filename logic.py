@@ -1,8 +1,11 @@
 import logging
 import pprint
+from collections import defaultdict
 
 from dash.exceptions import PreventUpdate
 from pandas import DataFrame
+import plotly.graph_objs as go
+
 
 import data
 from data import MongoManager
@@ -126,3 +129,69 @@ class AppLogic():
     def metric_data_from_ids(self, metric_name, db_name, selected_ids):
         cursor = self.data_manager.get_metric_data(metric_name, db_name, selected_ids)
         return cursor
+
+    def get_pareto_curves(self, pareto_x, pareto_y, db_name, selected_ids):
+        res = self.data_manager.get_metrics_data([pareto_x, pareto_y], db_name, selected_ids)
+
+        res = self.data_manager.init_connection_to_metrics(db_name).aggregate([
+            {"$match": {"name": {"$in": [pareto_x, pareto_y]}, "run_id": {"$in": selected_ids}}},
+            {"$group":
+                {"_id": "$run_id",
+                 "metrics": {"$push":  {"name": "$name",  "steps": "$steps",  "values": "$values"}}
+                 }
+             }]
+        )
+        res = list(res)
+        result = defaultdict(list)
+        for exp in res:
+            orig = None
+            for metric in exp['metrics']:
+                result[metric['name']].extend(metric['values'])
+                new_orig = [(exp['_id'], int(step)) for step in metric['steps']]
+                assert orig is None or new_orig == orig
+                orig = new_orig
+            result['_orig_'].extend(orig)
+
+        res_paret = paretize_exp(result, pareto_x, pareto_y, pareto_y)
+
+        layout = go.Layout(
+            title='Curve {}/{}'.format(pareto_x, pareto_y),
+        )
+        # traces = []
+        trace = go.Scatter(
+                x=res_paret[pareto_x],
+                y=res_paret[pareto_y],
+                mode='markers',
+                text=res_paret['_orig_'],
+                name='pareto front',
+            )
+        fig = go.Figure(data=[trace], layout=layout)
+        return fig
+
+def paretize_exp(data, x_name, crit_name, value_name=None):
+    if value_name is None:
+        value_name = crit_name
+
+    final_x = []
+    final_crit = []
+    final_vals = []
+    final_origins = []
+    cur_best_crit = None
+    cur_best_x = None
+    for x, crit, val, orig in sorted(zip(data[x_name], data[crit_name], data[value_name], data['_orig_'])):
+        if len(final_x) == 0 or crit > cur_best_crit:
+            cur_best_crit = crit
+            if x == cur_best_x:
+                final_crit[-1] = crit
+                final_vals[-1] = val
+                final_origins[-1] = orig
+            else:
+                final_x.append(x)
+                final_crit.append(crit)
+                final_vals.append(val)
+                final_origins.append(orig)
+            cur_best_x = x
+    return {x_name: final_x,
+            crit_name: final_crit,
+            value_name: final_vals,
+            '_orig_': final_origins}
