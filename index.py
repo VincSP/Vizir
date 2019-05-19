@@ -19,6 +19,7 @@ app.layout = html.Div([
     # Storages
     dcc.Store(id='database-dd-storage', storage_type='session'),
     dcc.Store(id='experiments-dd-storage', storage_type='session'),
+    dcc.Store(id='table-columns-storage', storage_type='session'),
     dcc.Store(id='table-selection-storage', storage_type='session'),
     dcc.Store(id='plot-storage', storage_type='session'),
 
@@ -173,13 +174,13 @@ def update_experiment_table(experiment_names, cols, query_nsub, db_name, query):
     return rows
 
 
-@app.callback(Output('experiment-table', 'columns'),
+@app.callback(Output('table-columns-storage', 'data'),
               [Input('add-column', 'n_submit')],
               [State('add-column', 'value'),
                State('experiment-table', 'columns')])
-def update_columns(n_submit, value, cols):
+def save_columns(n_submit, value, cols):
     if n_submit is None:
-        return cols
+        raise PreventUpdate
 
     if n_submit > 0:
         cols.append({
@@ -187,6 +188,15 @@ def update_columns(n_submit, value, cols):
             'editable_name': True, 'deletable': True
         })
     return cols
+
+
+@app.callback(Output('experiment-table', 'columns'),
+              [Input('table-columns-storage', 'modified_timestamp')],
+              [State('table-columns-storage', 'data'),
+               State('experiment-table', 'columns')])
+def update_columns(ts, storage_cols, cols):
+    # Use the default initial value if the storage is empty
+    return storage_cols or cols
 
 
 @app.callback(Output('tab-content', 'children'),
