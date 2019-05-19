@@ -82,6 +82,11 @@ layout = html.Div([
         html.Div(id='range_value', style={'width': '15%', 'float': 'right', 'display': 'inline-block'})
     ]),
     html.Div(id="image-container"),
+    dcc.Interval(
+        id='image-interval',
+        interval=5000,
+        n_intervals=0
+    )
 ])
 
 
@@ -97,9 +102,9 @@ def populate_image_dropdown(data_args):
 
 
 @app.callback(Output('image-storage', 'data'),
-              [Input('image-dropdown', 'value')],
+              [Input('image-dropdown', 'value'), Input('image-interval', 'n_intervals')],
               [State('tab-data', 'data')])
-def get_image_data(tag, data_args):
+def get_image_data(tag, n, data_args):
     if data_args is None:
         return
     selected_ids = data_args.get('selected_ids', [])

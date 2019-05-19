@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from app import app, default_columns, logic_manager
-from apps import config_viewer, datatable, plot_viewer, image_viewer
+from apps import config_viewer, datatable, plot_viewer, plot_aggr_viewer, image_viewer
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -86,13 +86,19 @@ app.layout = html.Div([
                     dcc.Tab(label='Datatable', value='tab-datatable'),
                     dcc.Tab(label='Configs', value='tab-config'),
                     dcc.Tab(label='Images', value='tab-image'),
-                    dcc.Tab(label='Graph', value='tab-graph')
+                    dcc.Tab(label='Graph', value='tab-graph'),
+                    dcc.Tab(label='Graph Aggr', value='tab-plot-aggr')
                 ]
             )
         ],
         className="row"),
-    html.Div(id='tab-content', className="row")],
-    style={"margin": "2% 3%"})
+    html.Div(id='tab-content', className="row"),
+    dcc.Interval(
+        id='table-interval',
+        interval=5000,
+        n_intervals=0
+    )
+], style={"margin": "2% 3%"})
 
 
 @app.callback([Output('database-selector', 'value'),
@@ -159,9 +165,10 @@ def select_experiement(selected_value, ts):
               [Input('experiment-selector', 'value'),
                Input('experiment-table', 'columns'),
                Input('add-query', 'n_submit'),
-               Input('database-selector', 'value')],
+               Input('database-selector', 'value'),
+               Input('table-interval', 'n_intervals')],
               [State('add-query', 'value')])
-def update_experiment_table(experiment_names, cols, query_nsub, db_name, query):
+def update_experiment_table(experiment_names, cols, query_nsub, db_name, n, query):
     '''
     Update datatable. Program wait State arg before fire callback
      and populate the table.
@@ -206,6 +213,8 @@ def render_content(tab, update_clicks):
         return image_viewer.layout
     elif tab == 'tab-graph':
         return plot_viewer.layout
+    elif tab == 'tab-plot-aggr':
+        return plot_aggr_viewer.layout        
     else:
         return html.Div('Not Found')
 
@@ -264,4 +273,4 @@ def load_selected_rows(ts, data):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8051)

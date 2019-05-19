@@ -97,9 +97,25 @@ class AppLogic():
 
         df = DataFrame(rows)
 
-        # temporarily replacing '.' in columns to '__'
-        # for pandas syntax reasons
-        normalize_col_names = lambda x: x.replace('.', '___')
+        def normalize_col_names(col):
+            """
+                replacing '.' in columns to '__'
+                for pandas syntax reasons,
+                except for digits
+            """
+            splits = col.split('.')
+            ncol = splits[0]
+            for i in range(1, len(splits)):
+                sm1 = splits[i - 1]
+                sm1 = sm1[sm1.find(' ') + 1:]
+                s = splits[i]
+                s = s[:s.find(' ')]
+                if sm1.replace('-', '', 1).isdigit() or \
+                    s.replace('-', '', 1).isdigit():
+                    ncol = ncol + '.' + splits[i]
+                else:    
+                    ncol = ncol + '___' + splits[i]
+            return ncol
 
         df_renamed = df.rename(columns=normalize_col_names)
 
