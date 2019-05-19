@@ -153,7 +153,7 @@ def select_experiement(selected_value, ts):
 
 @app.callback(Output('experiment-table', 'data'),
               [Input('experiment-selector', 'value'),
-               Input('experiment-table', 'columns'),
+               Input('table-columns-storage', 'data'),
                Input('add-query', 'n_submit'),
                Input('database-selector', 'value')],
               [State('add-query', 'value')])
@@ -175,18 +175,21 @@ def update_experiment_table(experiment_names, cols, query_nsub, db_name, query):
 
 
 @app.callback(Output('table-columns-storage', 'data'),
-              [Input('add-column', 'n_submit')],
-              [State('add-column', 'value'),
-               State('experiment-table', 'columns')])
-def save_columns(n_submit, value, cols):
-    if n_submit is None:
-        raise PreventUpdate
+              [Input('add-column', 'n_submit'),
+               Input('experiment-table', 'columns')],
+              [State('add-column', 'value'),])
+def save_columns(n_submit, cols, value):
+    ctx = dash.callback_context
+    adding_column = any(itm['prop_id'] == 'add-column.n_submit' for itm in ctx.triggered)
 
-    if n_submit > 0:
-        cols.append({
-            'id': value, 'name': value,
-            'editable_name': True, 'deletable': True
-        })
+    if adding_column:
+        if n_submit is None:
+            raise PreventUpdate
+        if n_submit > 0:
+            cols.append({
+                'id': value, 'name': value,
+                'editable_name': True, 'deletable': True
+            })
     return cols
 
 
