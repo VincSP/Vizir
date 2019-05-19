@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from app import app, default_columns, logic_manager
-from apps import config_viewer, datatable, plot_viewer, pareto
+from apps import config_viewer, datatable, plot_viewer, pareto, plot_trajectory
 import helpers
 
 logging.basicConfig(level=logging.DEBUG)
@@ -24,6 +24,8 @@ app.layout = html.Div([
     dcc.Store(id='plot-storage', storage_type='session'),
     dcc.Store(id='x-pareto-storage', storage_type='session'),
     dcc.Store(id='y-pareto-storage', storage_type='session'),
+    dcc.Store(id='traj-id-storage', storage_type='session'),
+    dcc.Store(id='steps-storage', storage_type='session'),
 
     # Page header
     html.Div([
@@ -91,6 +93,7 @@ app.layout = html.Div([
                     dcc.Tab(label='Configs', value='tab-config'),
                     dcc.Tab(label='Graph', value='tab-graph'),
                     dcc.Tab(label='Pareto', value='tab-pareto'),
+                    dcc.Tab(label='Trajectories', value='tab-trajectories'),
                 ])],
         className="row"),
     html.Div(id='tab-content', className="row")],
@@ -218,6 +221,8 @@ def render_content(tab, update_clicks):
         return plot_viewer.layout
     elif tab == 'tab-pareto':
         return pareto.layout
+    elif tab == 'tab-trajectories':
+        return plot_trajectory.layout
     else:
         return html.Div('Not Found')
 

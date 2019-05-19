@@ -60,12 +60,14 @@ class MongoManager():
 
         return cursor
 
-    def get_metrics_infos(self, db_name, selected_ids):
+    def get_from_run_infos(self, attr, db_name, selected_ids):
         collection = self.init_connection_to_runs(db_name)
         filter = {"_id": {"$in": selected_ids}}
-        projection = {"info.metrics": 1}
-        cursor = collection.find(filter=filter, projection=projection)
-        return cursor
+        projection = {"info.{}".format(attr): 1}
+        return collection.find(filter=filter, projection=projection)
+
+    def get_metrics_infos(self, db_name, selected_ids):
+        return self.get_from_run_infos('metrics', db_name, selected_ids)
 
     def get_metric_data(self, metric_name, db_name, selected_ids):
         collection = self.init_connection_to_metrics(db_name)
@@ -78,3 +80,21 @@ class MongoManager():
         filter = {"name": {"$in": metric_names}, "run_id": {"$in": selected_ids}}
         cursor = collection.find(filter=filter)
         return cursor
+
+    def get_traj_steps_from_id(self, db_name, selected_id):
+        metric_name = 'eval_sequence_probas'
+        collection = self.init_connection_to_metrics(db_name)
+        filter = {"name": metric_name, "run_id": selected_id}
+        proj = {'steps': 1}
+        return collection.find_one(filter=filter, projection=proj)['steps']
+
+    def get_traj_from_id(self, db_name, selected_id, idx):
+        metric_names = ['eval_sequence_probas', 'eval_rewards', 'eval_obs']
+        collection = self.init_connection_to_metrics(db_name)
+        filter = {"name": {'$in': metric_names}, "run_id": selected_id}
+        data = list(collection.find(filter=filter, projection={
+            'steps': {'$slice': [idx, 1]},
+            'values': {'$slice': [idx, 1]},
+        }))
+
+        return dict((elt['name'], elt['values']) for elt in data)

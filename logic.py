@@ -5,7 +5,8 @@ from collections import defaultdict
 from dash.exceptions import PreventUpdate
 from pandas import DataFrame
 import plotly.graph_objs as go
-
+import numpy as np
+from plotly import tools
 
 import data
 from data import MongoManager
@@ -167,6 +168,101 @@ class AppLogic():
             )
         fig = go.Figure(data=[trace], layout=layout)
         return fig
+
+    def traj_step_from_id_options(self, db_name, selected_id):
+        steps = self.data_manager.get_traj_steps_from_id(db_name, selected_id)
+        return [{'label': step, 'value': i} for i, step in enumerate(steps)]
+
+    def get_trajectory_plot(self, step_idx, step, db_name, selected_id):
+        res = self.data_manager.get_traj_from_id(db_name, selected_id, step_idx)
+        param_names = self.data_manager.get_from_run_infos('all_params_name', db_name, [selected_id])[0]['info']['all_params_name']
+        n_params = len(param_names)
+
+        idx = 0
+        values = res['eval_sequence_probas'][idx]
+        traces = _get_dynamics_traces(param_names, values)
+        if len(res) == 2:
+            steps = []
+            for i, r in zip(range(len(values)), res['eval_rewards'][idx]):
+                cur_step = dict(
+                    method='restyle',
+                    args=['visible', [False] * len(traces)],
+                    label='{}-R={}'.format(i, r),
+                )
+                cur_step['args'][1][i * n_params:(i + 1) * n_params] = [True] * n_params
+                steps.append(cur_step)
+
+            sliders = [dict(
+                active=1,
+                currentvalue={"prefix": "Traj "},
+                # pad={"l": 50},
+                steps=steps
+            )]
+
+            layout = dict(sliders=sliders,
+                          title='{} steps'.format(step))
+
+            fig = dict(data=traces, layout=layout)
+        else:
+            hm_traces = _get_heatmap_traces(res['eval_obs'][0], param_names)
+            all_traces = traces + hm_traces
+
+            steps = []
+            for i, r in enumerate(res['eval_rewards'][0]):
+                step = dict(
+                    method='restyle',
+                    args=['visible', [False] * len(all_traces)],
+                    label='{}-R={}'.format(i, r),
+                )
+                step['args'][1][i * n_params:(i + 1) * n_params] = [True] * n_params
+                step['args'][1][len(traces) + i] = True
+                steps.append(step)
+
+            slider = [dict(
+                active=1,
+                currentvalue={"prefix": "Traj "},
+                steps=steps
+            )]
+
+            fig = tools.make_subplots(rows=2, cols=1)
+            for trace in traces:
+                fig.append_trace(trace, row=1, col=1)
+            for trace in hm_traces:
+                trace.showscale = False
+                fig.append_trace(trace, row=2, col=1)
+
+            fig['layout'].update(sliders=slider, title='{} steps'.format(step))
+        return go.Figure(fig)
+
+
+def _get_dynamics_traces(param_names, seq_probas):
+    data = []
+    for i, traj in enumerate(seq_probas):
+        traj = np.array(traj)
+        for j, (param_p, name) in enumerate(zip(np.split(traj, traj.shape[1], 1), param_names)):
+            d = dict(
+                visible=i == 1,
+                mode='lines',
+                name=name,
+                x=np.arange(0, param_p.shape[0]),
+                y=param_p.squeeze())
+            data.append(d)
+    return data
+
+
+def _get_heatmap_traces(data, names):
+    plot_data = []
+    for i, traj_data in enumerate(data):
+        traj_data = np.array(traj_data)
+        plot_data.append(go.Heatmap(
+            visible=i == 1,
+            z=traj_data.transpose(),
+            x=list(range(traj_data.shape[0])),
+            y=names,
+            colorscale='Viridis',
+        ))
+    return plot_data
+
 
 def paretize_exp(data, x_name, crit_name, value_name=None):
     if value_name is None:
