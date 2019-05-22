@@ -1,4 +1,12 @@
+import os
+import pickle
+import shutil
+import tempfile
+
+import gridfs
 import pymongo
+
+import torch
 
 
 class MongoManager():
@@ -18,6 +26,11 @@ class MongoManager():
     def init_connection_to_metrics(self, db_name):
         db = self._client[db_name]
         return db['metrics']
+
+    def init_connection_to_gridfs(self, db_name):
+        '''Generic function to access directly to runs collection of selected database'''
+        db = self._client[db_name]
+        return gridfs.GridFS(db)
 
     def get_experiment_names(self, db_name):
         ''''
@@ -60,14 +73,20 @@ class MongoManager():
 
         return cursor
 
-    def get_from_run_infos(self, attr, db_name, selected_ids):
+    def get_from_run_info(self, attr, db_name, run_id):
+        collection = self.init_connection_to_runs(db_name)
+        filter = {"_id": run_id}
+        projection = {"info.{}".format(attr): 1}
+        return collection.find_one(filter=filter, projection=projection)['info'][attr]
+
+    def get_from_runs_infos(self, attr, db_name, selected_ids):
         collection = self.init_connection_to_runs(db_name)
         filter = {"_id": {"$in": selected_ids}}
         projection = {"info.{}".format(attr): 1}
         return collection.find(filter=filter, projection=projection)
 
     def get_metrics_infos(self, db_name, selected_ids):
-        return self.get_from_run_infos('metrics', db_name, selected_ids)
+        return self.get_from_runs_infos('metrics', db_name, selected_ids)
 
     def get_metric_data(self, metric_name, db_name, selected_ids):
         collection = self.init_connection_to_metrics(db_name)
@@ -81,20 +100,23 @@ class MongoManager():
         cursor = collection.find(filter=filter)
         return cursor
 
-    def get_traj_steps_from_id(self, db_name, selected_id):
-        metric_name = 'eval_sequence_probas'
-        collection = self.init_connection_to_metrics(db_name)
-        filter = {"name": metric_name, "run_id": selected_id}
-        proj = {'steps': 1}
-        return collection.find_one(filter=filter, projection=proj)['steps']
+    def get_artifact_id_from_name(self, artifact_name, db_name, run_id):
+        collection = self.init_connection_to_runs(db_name)
+        exp = collection.find_one({"_id": run_id, 'artifacts.name': artifact_name}, {'artifacts': 1})
+        if exp is None:
+            return None
 
-    def get_traj_from_id(self, db_name, selected_id, idx):
-        metric_names = ['eval_sequence_probas', 'eval_rewards', 'eval_obs']
-        collection = self.init_connection_to_metrics(db_name)
-        filter = {"name": {'$in': metric_names}, "run_id": selected_id}
-        data = list(collection.find(filter=filter, projection={
-            'steps': {'$slice': [idx, 1]},
-            'values': {'$slice': [idx, 1]},
-        }))
+        for elt in exp['artifacts']:
+            if elt['name'] == artifact_name:
+                return elt['file_id']
 
-        return dict((elt['name'], elt['values']) for elt in data)
+    def get_artifact(self, db_name, artifact_name, selected_id):
+        object_id = self.get_artifact_id_from_name(artifact_name, db_name, selected_id)
+        artifact = self.init_connection_to_gridfs(db_name).get(object_id)
+        temp_path = tempfile.mkdtemp()
+        temp_file = os.path.join(temp_path, 'salut')
+        with open(temp_file, 'wb') as f:
+            f.write(artifact.read())
+            obj = torch.load(temp_file)
+        shutil.rmtree(temp_path)
+        return obj

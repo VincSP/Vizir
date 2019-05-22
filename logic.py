@@ -170,20 +170,28 @@ class AppLogic():
         return fig
 
     def traj_step_from_id_options(self, db_name, selected_id):
-        steps = self.data_manager.get_traj_steps_from_id(db_name, selected_id)
-        return [{'label': step, 'value': i} for i, step in enumerate(steps)]
+        steps = self.data_manager.get_from_run_info('evaluation_trajectories', db_name, selected_id)
+        return [{'label': step, 'value': filename} for step, filename in steps]
 
-    def get_trajectory_plot(self, step_idx, step, db_name, selected_id):
-        res = self.data_manager.get_traj_from_id(db_name, selected_id, step_idx)
-        param_names = self.data_manager.get_from_run_infos('all_params_name', db_name, [selected_id])[0]['info']['all_params_name']
+    # def get_trajectory_plot(self, step_idx, step, db_name, selected_id):
+    def get_trajectory_plot(self, artifact_name, db_name, selected_id):
+        param_names = self.data_manager.get_from_run_info('all_params_name', db_name, selected_id)
+        feature_names = self.data_manager.get_from_run_info('all_params_name', db_name, selected_id)
+        trajectories_data = self.data_manager.get_artifact(db_name, artifact_name, selected_id)
+
         n_params = len(param_names)
 
         idx = 0
-        values = res['eval_sequence_probas'][idx]
-        traces = _get_dynamics_traces(param_names, values)
-        if len(res) == 2:
+        # values = res['eval_sequence_probas'][idx]
+
+        rewards = trajectories_data['rewards']
+        arch_probas = trajectories_data['architecture_probas']
+        all_obs = trajectories_data['obs']
+
+        traces = _get_dynamics_traces(param_names, arch_probas)
+        if trajectories_data['obs'] is None:
             steps = []
-            for i, r in zip(range(len(values)), res['eval_rewards'][idx]):
+            for i, r in zip(range(len(arch_probas)), rewards):
                 cur_step = dict(
                     method='restyle',
                     args=['visible', [False] * len(traces)],
@@ -200,23 +208,23 @@ class AppLogic():
             )]
 
             layout = dict(sliders=sliders,
-                          title='{} steps'.format(step))
+                          title=artifact_name)
 
             fig = dict(data=traces, layout=layout)
         else:
-            hm_traces = _get_heatmap_traces(res['eval_obs'][0], param_names)
+            hm_traces = _get_heatmap_traces(all_obs, feature_names)
             all_traces = traces + hm_traces
 
             steps = []
-            for i, r in enumerate(res['eval_rewards'][0]):
-                step = dict(
+            for i, r in enumerate(rewards):
+                cur_step = dict(
                     method='restyle',
                     args=['visible', [False] * len(all_traces)],
                     label='{}-R={}'.format(i, r),
                 )
-                step['args'][1][i * n_params:(i + 1) * n_params] = [True] * n_params
-                step['args'][1][len(traces) + i] = True
-                steps.append(step)
+                cur_step['args'][1][i * n_params:(i + 1) * n_params] = [True] * n_params
+                cur_step['args'][1][len(traces) + i] = True
+                steps.append(cur_step)
 
             slider = [dict(
                 active=1,
@@ -231,7 +239,7 @@ class AppLogic():
                 trace.showscale = False
                 fig.append_trace(trace, row=2, col=1)
 
-            fig['layout'].update(sliders=slider, title='{} steps'.format(step))
+            fig['layout'].update(sliders=slider, title='Trajectories')
         return go.Figure(fig)
 
 

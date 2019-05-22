@@ -3,6 +3,7 @@ import dash_core_components as dcc
 
 
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 
 from app import app, logic_manager
 
@@ -13,14 +14,7 @@ layout = html.Div([
     html.Div(dcc.Dropdown(id='steps-dropdown')),
     html.Div(
         dcc.Graph(id='traj-plot')
-    ),
-
-    dcc.Interval(
-            id='graph-interval',
-            interval=60000,
-            n_intervals=0
-        )
-
+    )
 ])
 
 
@@ -59,13 +53,12 @@ def store_selected_traj_id(selected_step):
     return selected_step
 
 @app.callback(Output('traj-plot', 'figure'),
-              [Input('steps-dropdown', 'value'),
-               Input('graph-interval', 'n_intervals')],
+              [Input('steps-dropdown', 'value')],
               [State('ids-dropdown', 'value'),
-                State('steps-dropdown', 'label '),
                State('tab-data', 'data')])
-def plot_traj(step_idx, n, selected_id, step, data_args):
-    if data_args is None:
-        return []
+def plot_traj(artifact_name, selected_id, data_args):
+    if data_args is None or selected_id is None or artifact_name is None:
+        raise PreventUpdate
     db_name = data_args['db']
-    return logic_manager.get_trajectory_plot(step_idx, step, db_name, selected_id)
+    fig = logic_manager.get_trajectory_plot(artifact_name, db_name, selected_id)
+    return fig
