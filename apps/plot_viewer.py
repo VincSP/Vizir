@@ -19,7 +19,6 @@ layout = html.Div([
             interval=5000,
             n_intervals=0
         )
-
 ])
 
 
@@ -31,7 +30,7 @@ def populate_metric_dropdown(data_args):
     selected_ids = data_args.get('selected_ids', [])
     db_name = data_args['db']
     metric_names = logic_manager.metric_names_from_ids(db_name, selected_ids)
-    return [{'label': name, 'value': name} for name in metric_names]
+    return [{'label': name, 'value': name} for name in sorted(metric_names)]
 
 
 @app.callback(Output('metric-plot', 'figure'),

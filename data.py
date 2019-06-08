@@ -77,7 +77,6 @@ class MongoManager():
             }
         """
         def is_image(info):
-            print('info', info)
             if 'contentType' in info:
                 return info['contentType'].startswith('image')
             elif 'content-type' in info['metadata']:
