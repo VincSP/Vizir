@@ -9,8 +9,9 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from app import app, default_columns, logic_manager
-from apps import config_viewer, datatable, plot_viewer, pareto, plot_trajectory
+from apps import config_viewer, datatable, plot_viewer, pareto, image_viewer, plot_trajectory
 import helpers
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('dashvision.index')
@@ -94,10 +95,16 @@ app.layout = html.Div([
                     dcc.Tab(label='Graph', value='tab-graph'),
                     dcc.Tab(label='Pareto', value='tab-pareto'),
                     dcc.Tab(label='Trajectories', value='tab-trajectories'),
+                    dcc.Tab(label='Images', value='tab-image'),
                 ])],
         className="row"),
-    html.Div(id='tab-content', className="row")],
-    style={"margin": "2% 3%"})
+    html.Div(id='tab-content', className="row"),
+    dcc.Interval(
+        id='table-interval',
+        interval=5000,
+        n_intervals=0
+    )
+], style={"margin": "2% 3%"})
 
 
 @app.callback([Output('database-selector', 'value'),
@@ -162,9 +169,10 @@ def select_experiement(selected_value, ts):
               [Input('experiment-selector', 'value'),
                Input('table-columns-storage', 'data'),
                Input('add-query', 'n_submit'),
-               Input('database-selector', 'value')],
+               Input('database-selector', 'value'),
+               Input('table-interval', 'n_intervals')],
               [State('add-query', 'value')])
-def update_experiment_table(experiment_names, cols, query_nsub, db_name, query):
+def update_experiment_table(experiment_names, cols, query_nsub, db_name, n, query):
     '''
     Update datatable. Program wait State arg before fire callback
      and populate the table.
@@ -217,6 +225,8 @@ def render_content(tab, update_clicks):
         return datatable.layout
     elif tab == 'tab-config':
         return config_viewer.layout
+    elif tab == 'tab-image':
+        return image_viewer.layout
     elif tab == 'tab-graph':
         return plot_viewer.layout
     elif tab == 'tab-pareto':
@@ -290,4 +300,4 @@ def load_selected_rows(ts, exp_selection, data):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8050)
