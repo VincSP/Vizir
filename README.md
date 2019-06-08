@@ -1,8 +1,16 @@
-# Dash-Vision
-Web interface for visualization using Dash framework 
+# Vizir
 
-Aim : Compare different machine learning experiences and visualize it 
+Compare different machine learning experiences.
 
-In developements.
+Currently in developpment, so clone from `dev` for now:
 
-Used technologies : Python, MongoDB, Dash.
+```
+git clone https://github.com/VincSP/Vizir
+cd Vizir
+git checkout dev
+python index.py
+```
+
+Then, open up a browser, and go to `localhost:8050`!
+
+![Alt text](presentation.gif)
