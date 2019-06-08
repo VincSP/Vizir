@@ -40,6 +40,8 @@ class Images():
 
     @classmethod
     def load_images_from_index(cls, db_name, data, index):
+        if data is None:
+            return
         step = list(data.keys())[index]
         imgs = cls.load_images_from_step(db_name, data, step)
         return imgs
@@ -102,10 +104,11 @@ def populate_image_dropdown(data_args):
 
 
 @app.callback(Output('image-storage', 'data'),
-              [Input('image-dropdown', 'value'), Input('image-interval', 'n_intervals')],
+              [Input('image-dropdown', 'value'),
+               Input('image-interval', 'n_intervals')],
               [State('tab-data', 'data')])
 def get_image_data(tag, n, data_args):
-    if data_args is None:
+    if (data_args is None) or (tag is None):
         return
     selected_ids = data_args.get('selected_ids', [])
     db_name = data_args['db']
@@ -114,10 +117,11 @@ def get_image_data(tag, n, data_args):
 
 @app.callback(Output('image-container', 'children'),
               [Input('image-slider', 'value'),
-               Input('image-storage', 'data')],
+               Input('image-storage', 'data'),
+               Input('image-dropdown', 'value')],
               [State('tab-data', 'data')])
-def plot_images(slider_val, images, data_args):
-    if data_args is None:
+def plot_images(slider_val, images, drop, data_args):
+    if (data_args is None) or (images is None):
         return
     db_name = data_args['db']
     return list(Images().load_images_from_index(db_name, images, slider_val).values())
@@ -136,6 +140,9 @@ def set_max_image_slider(images):
     Output('image-slider', 'marks'),
     [Input('image-storage', 'data')])
 def set_marks_image_slider(images):
+    if images is None:
+        return 0
+
     marks = {}
     i = 0
     for step in Images().get_steps(images):
