@@ -9,7 +9,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from app import app, default_columns, logic_manager
-from apps import config_viewer, datatable, plot_viewer, image_viewer
+from apps import config_viewer, datatable, plot_viewer, plot_aggr_viewer, image_viewer
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -86,7 +86,8 @@ app.layout = html.Div([
                     dcc.Tab(label='Datatable', value='tab-datatable'),
                     dcc.Tab(label='Configs', value='tab-config'),
                     dcc.Tab(label='Images', value='tab-image'),
-                    dcc.Tab(label='Graph', value='tab-graph')
+                    dcc.Tab(label='Graph', value='tab-graph'),
+                    dcc.Tab(label='Graph Aggr', value='tab-plot-aggr')
                 ]
             )
         ],
@@ -212,6 +213,8 @@ def render_content(tab, update_clicks):
         return image_viewer.layout
     elif tab == 'tab-graph':
         return plot_viewer.layout
+    elif tab == 'tab-plot-aggr':
+        return plot_aggr_viewer.layout        
     else:
         return html.Div('Not Found')
 
@@ -270,4 +273,4 @@ def load_selected_rows(ts, data):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8051)

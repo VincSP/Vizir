@@ -1,11 +1,21 @@
 import dash_html_components as html
 import dash_core_components as dcc
 import plotly.graph_objs as go
+from textwrap import dedent as d
+import json
 
 
 from dash.dependencies import Input, Output, State
 
 from app import app, default_columns, logic_manager
+
+styles = {
+    'pre': {
+        'border': 'thin lightgrey solid',
+        'overflowX': 'scroll'
+    }
+}
+
 
 layout = html.Div([
     html.H3('Plot'),
@@ -14,9 +24,15 @@ layout = html.Div([
     html.Div(
         dcc.Graph(id='metric-plot')
     ),
+    html.Div([
+            dcc.Markdown(d("""
+                **Selection Data**
+            """)),
+            html.Pre(id='selected-data', style=styles['pre']),
+        ], className='three columns'),
     dcc.Interval(
             id='graph-interval',
-            interval=5000,
+            interval=10000,
             n_intervals=0
         )
 ])
@@ -54,9 +70,27 @@ def plot_metric(metric_name, n, data_args):
             x=d['steps'],
             y=d['values'],
             name=d['run_id'],
+            mode='lines+markers',
         )
         traces.append(trace)
 
     fig = go.Figure(data=traces, layout=layout)
 
     return fig
+
+@app.callback(Output('selected-data', 'children'),
+              [Input('metric-plot', 'selectedData')],
+              [State('metric-plot', 'figure')])
+def print_selected_data(data, graph):
+    if data is None:
+        return
+    
+    out = {}
+    for d in data['points']:
+        num = d['curveNumber']
+        id = graph['data'][num]['name']
+        if id not in out:
+            out[id] = {d['x'] : d['y']}
+        else:
+            out[id].update({d['x']: d['y']})
+    return json.dumps(out, indent=2)    
