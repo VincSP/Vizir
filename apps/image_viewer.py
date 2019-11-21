@@ -60,7 +60,8 @@ class Images():
 
     @classmethod
     def get_image_step_from_name(cls, name):
-        return int(name.rsplit('_', 1)[1])
+        # print('name', name)
+        return int(name.rsplit('_', 1)[1].split('.')[0])
 
 
 
